@@ -1,0 +1,8 @@
+# 파일: requirements.txt
+# 역할: Python 의존성 목록
+# 사용: pip install -r requirements.txt
+
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.0.0
+pyyaml>=6.0

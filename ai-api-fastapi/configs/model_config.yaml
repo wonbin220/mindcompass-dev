@@ -1,0 +1,19 @@
+# 파일: configs/model_config.yaml
+# 역할: 감정분류 모델 설정
+# 환경: local / dev / prod 에서 이 파일을 오버라이드하거나 환경변수로 대체
+
+model:
+  name: "stub-keyword-classifier"
+  version: "0.1.0-stub"
+  # 실제 모델 사용 시 아래 경로를 지정
+  # checkpoint_path: "training/emotion_classifier/checkpoints/best_model.pt"
+
+inference:
+  # emotionTags 판정에 사용하는 확률 임계값
+  threshold: 0.3
+  # 최대 입력 길이 (토큰 수, 실제 모델 사용 시 적용)
+  max_input_length: 512
+
+server:
+  host: "0.0.0.0"
+  port: 8090

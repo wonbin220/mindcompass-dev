@@ -1,0 +1,22 @@
+// 파일: LoginRequest.java
+// 역할: 로그인 요청 DTO
+// 화면: 로그인 페이지
+
+package com.mindcompass.api.auth.dto.request;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@NoArgsConstructor
+public class LoginRequest {
+
+    @NotBlank(message = "이메일은 필수입니다")
+    @Email(message = "유효한 이메일 형식이 아닙니다")
+    private String email;
+
+    @NotBlank(message = "비밀번호는 필수입니다")
+    private String password;
+}

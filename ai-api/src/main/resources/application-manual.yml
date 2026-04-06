@@ -1,0 +1,61 @@
+# 파일: application-manual.yml
+# 역할: manual 프로필 전용 설정
+# 설명: 실제 OpenAI 호출 시 사용
+# 주의: 이 파일에 API 키를 직접 입력하지 마세요!
+
+# ========================================
+# OpenAI API 키 설정 방법
+# ========================================
+#
+# 방법 1: 환경 변수 (권장)
+#   export OPENAI_API_KEY=sk-xxx...
+#   ./gradlew bootRun -Pprofile=manual
+#
+# 방법 2: JVM 옵션
+#   ./gradlew bootRun -Pprofile=manual -Dspring.ai.openai.api-key=sk-xxx...
+#
+# 방법 3: 로컬 설정 파일 (gitignore 필수)
+#   application-local.yml 파일 생성 후:
+#   spring:
+#     ai:
+#       openai:
+#         api-key: sk-xxx...
+#
+# ========================================
+
+spring:
+  ai:
+    openai:
+      # API 키는 환경 변수로 주입
+      api-key: ${OPENAI_API_KEY:}
+
+      chat:
+        options:
+          # 사용할 모델
+          # - gpt-4o-mini: 빠르고 저렴 (권장)
+          # - gpt-4o: 더 정확하지만 비쌈
+          # - gpt-4-turbo: 긴 컨텍스트 필요시
+          model: gpt-4o-mini
+
+          # 응답의 창의성 (0.0 ~ 2.0)
+          # - 0.0: 결정적, 일관된 응답
+          # - 0.7: 적당한 창의성 (권장)
+          # - 1.5+: 매우 창의적, 예측 불가
+          temperature: 0.7
+
+          # 최대 응답 토큰 수
+          max-tokens: 1000
+
+          # 응답 중단 조건 (선택적)
+          # stop-sequences:
+          #   - "\n\n"
+
+# manual 프로필에서의 로깅
+logging:
+  level:
+    # AI 호출 상세 로깅
+    org.springframework.ai: DEBUG
+    org.springframework.ai.openai: DEBUG
+
+    # 토큰 사용량 확인
+    com.mindcompass.ai.prompt: INFO

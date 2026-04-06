@@ -1,0 +1,5 @@
+// 파일: settings.gradle
+// 역할: Gradle 프로젝트 설정
+// 프로젝트명: backend-api
+
+rootProject.name = 'backend-api'

@@ -1,0 +1,138 @@
+# 파일: application.yml
+# 역할: Spring Boot 메인 설정
+# 환경: 공통 설정 + 프로필별 분리
+
+spring:
+  application:
+    name: backend-api
+
+  profiles:
+    active: local  # 기본 프로필
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      ddl-auto: validate  # 운영에서는 validate, 개발은 프로필에서 오버라이드
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 100
+    open-in-view: false  # 성능을 위해 비활성화
+
+  # Flyway 설정
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-for-development-only-change-in-production}
+  access-token-validity-ms: 3600000      # 1시간
+  refresh-token-validity-ms: 604800000   # 7일
+
+# AI API 설정
+ai:
+  api:
+    enabled: ${AI_API_ENABLED:false}  # 로컬에서는 기본 비활성화
+    base-url: ${AI_API_BASE_URL:http://localhost:8081}
+    timeout-ms: ${AI_API_TIMEOUT_MS:5000}
+
+# 로깅 설정
+logging:
+  level:
+    root: INFO
+    com.mindcompass.api: DEBUG
+    org.springframework.security: DEBUG
+
+# 서버 설정
+server:
+  port: 8080
+
+---
+# 파일: application-local.yml (같은 파일 내 프로필 분리)
+# 역할: 로컬 개발 환경 설정
+
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  # H2 인메모리 DB (로컬 개발용)
+  datasource:
+    url: jdbc:h2:mem:mindcompass;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  # H2 콘솔 활성화
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # 로컬에서는 자동 생성
+    show-sql: true
+
+  flyway:
+    enabled: false  # 로컬에서는 Flyway 비활성화
+
+# AI API 비활성화 (mock 사용)
+ai:
+  api:
+    enabled: false
+
+---
+# 파일: application-dev.yml
+# 역할: 개발 서버 환경 설정
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+ai:
+  api:
+    enabled: true
+
+---
+# 파일: application-prod.yml
+# 역할: 프로덕션 환경 설정
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+ai:
+  api:
+    enabled: true
+
+logging:
+  level:
+    root: WARN
+    com.mindcompass.api: INFO

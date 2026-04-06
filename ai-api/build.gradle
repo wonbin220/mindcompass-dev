@@ -1,0 +1,68 @@
+// 파일: build.gradle
+// 역할: ai-api 의존성 및 빌드 설정
+// 설명: Spring AI 기반 내부 오케스트레이션 서버
+
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'com.mindcompass'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    sourceCompatibility = '17'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+}
+
+// Spring AI BOM 버전
+ext {
+    springAiVersion = '0.8.1'
+}
+
+dependencies {
+    // Spring Boot Web
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Spring Boot Actuator (health check)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // Spring AI - OpenAI
+    implementation "org.springframework.ai:spring-ai-openai-spring-boot-starter:${springAiVersion}"
+
+    // Validation
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// 빌드 시 프로필 정보 출력
+bootRun {
+    systemProperty 'spring.profiles.active', findProperty('profile') ?: 'dev'
+}

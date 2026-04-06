@@ -1,0 +1,4 @@
+// 파일: settings.gradle
+// 역할: ai-api 프로젝트 이름 설정
+
+rootProject.name = 'ai-api'

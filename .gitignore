@@ -1,0 +1,74 @@
+# ===== AI Tool Configs =====
+CLAUDE.md
+AGENTS.md
+.claude/
+.omc/
+
+# ===== Learning Documents (개인 학습용) =====
+*_LEARNING.md
+docs/CCG_COLLABORATION_PROTOCOL.md
+docs/ai-api/OPENAI_USAGE_AND_PROFILE_GUIDE.md
+
+# ===== Java / Spring Boot =====
+build/
+.gradle/
+*.jar
+*.war
+*.class
+out/
+bin/
+!gradle/wrapper/gradle-wrapper.jar
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+.eggs/
+*.egg
+venv/
+.venv/
+env/
+.env
+
+# ===== Node.js =====
+node_modules/
+package-lock.json
+
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Secrets / Environment =====
+*.env
+*.env.local
+*.env.*.local
+application-secret.yml
+application-prod.yml
+credentials.json
+
+# ===== ML Model Files =====
+*.pt
+*.pth
+*.bin
+*.onnx
+*.h5
+*.pkl
+*.safetensors
+models/
