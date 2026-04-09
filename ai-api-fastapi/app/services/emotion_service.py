@@ -59,7 +59,7 @@ class EmotionService:
         if not request.text or not request.text.strip():
             logger.warning("빈 텍스트 입력 -> fallback 응답 반환")
             return self._fallback_response(
-                info, reason="empty_text"
+                info, reason="EMPTY_TEXT"
             )
 
         # --- model inference ---
@@ -68,7 +68,7 @@ class EmotionService:
         except Exception as e:
             logger.error("모델 추론 실패 -> fallback 응답 반환: %s", e)
             return self._fallback_response(
-                info, reason=f"model_error: {e}"
+                info, reason="MODEL_ERROR"
             )
 
         # scores를 confidence 내림차순으로 정렬
@@ -77,16 +77,19 @@ class EmotionService:
         )
 
         primary = sorted_scores[0]
+        
+        # NOTE: 이전 TIRED fallback 로직은 감정 카테고리 변경으로 삭제됨
+
         threshold = info["threshold"]
-        emotion_tags = [s["emotion"] for s in sorted_scores if s["score"] >= threshold]
+        emotion_tags = [s["label"] for s in sorted_scores if s["score"] >= threshold]
 
         return EmotionClassifyResponse(
-            primaryEmotion=primary["emotion"],
+            primaryEmotion=primary["label"],
             confidence=primary["score"],
             emotionTags=emotion_tags,
             scores=[
-                EmotionScore(emotion=s["emotion"], score=s["score"])
-                for s in sorted_scores
+                EmotionScore(label=s["label"], score=s["score"])
+                for s in sorted_scores[:request.returnTopK]
             ],
             modelName=info["model_name"],
             modelVersion=info["model_version"],
@@ -103,7 +106,7 @@ class EmotionService:
         ai-api는 이 응답의 fallbackUsed 필드를 보고 후속 처리를 결정한다.
         """
         return EmotionClassifyResponse(
-            primaryEmotion="unknown",
+            primaryEmotion="neutral",
             confidence=0.0,
             emotionTags=[],
             scores=[],

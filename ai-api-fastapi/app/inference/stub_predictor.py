@@ -6,16 +6,15 @@ import hashlib
 
 from app.inference.base_predictor import BasePredictor
 
-# 지원하는 감정 레이블 목록
+# 지원하는 감정 레이블 목록 (joy, sadness, anger, fear, surprise, disgust, neutral)
 EMOTION_LABELS = [
     "joy",
     "sadness",
     "anger",
-    "anxiety",
-    "calm",
-    "gratitude",
-    "loneliness",
-    "hope",
+    "fear",
+    "surprise",
+    "disgust",
+    "neutral",
 ]
 
 # 텍스트 키워드 -> 감정 매핑 (stub용)
@@ -27,17 +26,18 @@ KEYWORD_MAP = {
     "우울": "sadness",
     "힘들": "sadness",
     "화가": "anger",
-    "짜증": "anger",
-    "불안": "anxiety",
-    "걱정": "anxiety",
-    "편안": "calm",
-    "평화": "calm",
-    "감사": "gratitude",
-    "고마": "gratitude",
-    "외로": "loneliness",
-    "혼자": "loneliness",
-    "희망": "hope",
-    "기대": "hope",
+    "열받": "anger",
+    "무서": "fear",
+    "겁나": "fear",
+    "불안": "fear",
+    "걱정": "fear",
+    "놀랐": "surprise",
+    "당황": "surprise",
+    "싫어": "disgust",
+    "혐오": "disgust",
+    "평온": "neutral",
+    "보통": "neutral",
+    "그저": "neutral",
 }
 
 
@@ -52,7 +52,7 @@ class StubPredictor(BasePredictor):
     """
 
     MODEL_NAME = "stub-keyword-classifier"
-    MODEL_VERSION = "0.1.0-stub"
+    MODEL_VERSION = "0.2.0-stub"
     THRESHOLD = 0.3
 
     def predict(self, text: str) -> dict:
@@ -91,7 +91,7 @@ class StubPredictor(BasePredictor):
         scores = []
         for label in EMOTION_LABELS:
             if label == primary:
-                scores.append({"emotion": label, "score": 0.75})
+                scores.append({"label": label, "score": 0.70})
             else:
-                scores.append({"emotion": label, "score": 0.04})
+                scores.append({"label": label, "score": 0.05})
         return scores

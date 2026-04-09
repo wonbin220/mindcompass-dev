@@ -80,15 +80,21 @@ public class AiSafetyClient {
         boolean hasKeyword = CRISIS_KEYWORDS.stream()
                 .anyMatch(keyword -> content.contains(keyword));
 
-        SafetyCheckResponse response = new SafetyCheckResponse();
-        // Note: 실제 구현에서는 빌더나 setter 사용
-        // 여기서는 구조만 보여주기 위해 간략화
-
         if (hasKeyword) {
             log.warn("키워드 기반 위기 감지됨");
-            // TODO: response에 위기 상태 설정
+            return SafetyCheckResponse.builder()
+                    .isRisky(true)
+                    .riskScore(80)
+                    .riskLevel("HIGH")
+                    .recommendedAction("SHOW_SAFETY_MESSAGE")
+                    .safetyMessage(DEFAULT_SAFETY_MESSAGE)
+                    .build();
         }
 
-        return response;
+        return SafetyCheckResponse.builder()
+                .isRisky(false)
+                .riskScore(0)
+                .riskLevel("LOW")
+                .build();
     }
 }

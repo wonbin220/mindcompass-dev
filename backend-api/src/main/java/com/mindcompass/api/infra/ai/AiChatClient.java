@@ -74,10 +74,9 @@ public class AiChatClient {
     }
 
     private ChatResponse createFallbackResponse() {
-        // TODO: ChatResponse에 빌더 추가 후 개선
-        ChatResponse response = new ChatResponse();
-        // response.setMessage(FALLBACK_MESSAGE);
-        // response.setIsSafetyTriggered(false);
-        return response;
+        return ChatResponse.builder()
+                .message(FALLBACK_MESSAGE)
+                .isSafetyTriggered(false)
+                .build();
     }
 }

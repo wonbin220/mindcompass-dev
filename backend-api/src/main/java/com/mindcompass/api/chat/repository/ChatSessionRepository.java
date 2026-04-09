@@ -20,6 +20,9 @@ public interface ChatSessionRepository extends JpaRepository<ChatSession, Long> 
     // 사용자의 활성 세션 목록
     List<ChatSession> findByUserIdAndStatusOrderByUpdatedAtDesc(Long userId, SessionStatus status);
 
+    // 기간 내 채팅 세션 수 조회
+    long countByUserIdAndCreatedAtBetween(Long userId, java.time.LocalDateTime start, java.time.LocalDateTime end);
+
     // 세션과 메시지 함께 조회 (N+1 방지)
     // @Query("SELECT s FROM ChatSession s LEFT JOIN FETCH s.messages WHERE s.id = :id")
     // Optional<ChatSession> findByIdWithMessages(@Param("id") Long id);

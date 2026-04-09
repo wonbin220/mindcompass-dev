@@ -1,0 +1,26 @@
+{
+  "id_to_label": {
+    "0": "HAPPY",
+    "1": "CALM",
+    "2": "ANXIOUS",
+    "3": "SAD",
+    "4": "ANGRY",
+    "5": "TIRED"
+  },
+  "label_to_id": {
+    "HAPPY": 0,
+    "CALM": 1,
+    "ANXIOUS": 2,
+    "SAD": 3,
+    "ANGRY": 4,
+    "TIRED": 5
+  },
+  "label_to_tags": {
+    "HAPPY": ["HAPPY"],
+    "CALM": ["CALM", "RELIEVED"],
+    "ANXIOUS": ["ANXIOUS", "OVERWHELMED"],
+    "SAD": ["SAD", "LONELY"],
+    "ANGRY": ["ANGRY"],
+    "TIRED": ["TIRED", "NUMB"]
+  }
+}

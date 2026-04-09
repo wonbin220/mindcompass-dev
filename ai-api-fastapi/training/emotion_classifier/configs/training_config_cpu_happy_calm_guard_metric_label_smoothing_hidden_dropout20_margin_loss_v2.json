@@ -1,0 +1,23 @@
+{
+  "model_name": "beomi/KcELECTRA-base",
+  "max_length": 96,
+  "num_labels": 6,
+  "num_train_epochs": 2,
+  "learning_rate": 2e-05,
+  "train_batch_size": 4,
+  "eval_batch_size": 4,
+  "gradient_accumulation_steps": 4,
+  "weight_decay": 0.01,
+  "warmup_ratio": 0.05,
+  "metric_for_best_model": "eval_happy_calm_macro_f1",
+  "greater_is_better": true,
+  "seed": 42,
+  "logging_steps": 100,
+  "save_total_limit": 1,
+  "dataloader_num_workers": 0,
+  "early_stopping_patience": 1,
+  "label_smoothing": 0.05,
+  "hidden_dropout_prob": 0.2,
+  "happy_calm_margin_loss_weight": 0.05,
+  "happy_calm_margin_value": 0.1
+}

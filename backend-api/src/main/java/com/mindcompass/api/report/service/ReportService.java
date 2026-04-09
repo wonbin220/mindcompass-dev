@@ -78,8 +78,8 @@ public class ReportService {
                     .build());
         }
 
-        // TODO: 채팅 수 조회 추가
-        int totalChats = 0;
+        int totalChats = (int) chatSessionRepository.countByUserIdAndCreatedAtBetween(
+                userId, startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
 
         return WeeklyReportResponse.builder()
                 .startDate(startDate)
@@ -132,7 +132,8 @@ public class ReportService {
                 .year(year)
                 .month(month)
                 .totalDiaries(diaries.size())
-                .totalChats(0) // TODO: 채팅 수 조회
+                .totalChats((int) chatSessionRepository.countByUserIdAndCreatedAtBetween(
+                        userId, startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay()))
                 .averageEmotionScore(avgScore)
                 .emotionDistribution(emotionDistribution)
                 .dominantEmotion(dominantEmotion)
@@ -144,8 +145,39 @@ public class ReportService {
 
     private List<MonthlyReportResponse.WeeklySummary> generateWeeklySummaries(
             List<Diary> diaries, YearMonth yearMonth) {
-        // TODO: 실제 주별 그룹핑 로직 구현
-        return List.of();
+        // 주 번호별 그룹핑 (1주차 = 1일~7일, 2주차 = 8일~14일, ...)
+        Map<Integer, List<Diary>> weeklyGroups = diaries.stream()
+                .collect(Collectors.groupingBy(d -> ((d.getDiaryDate().getDayOfMonth() - 1) / 7) + 1));
+
+        List<MonthlyReportResponse.WeeklySummary> summaries = new ArrayList<>();
+        int totalWeeks = (yearMonth.lengthOfMonth() + 6) / 7;
+
+        for (int week = 1; week <= totalWeeks; week++) {
+            List<Diary> weekDiaries = weeklyGroups.getOrDefault(week, List.of());
+
+            String dominant = weekDiaries.stream()
+                    .filter(d -> d.getPrimaryEmotion() != null)
+                    .collect(Collectors.groupingBy(Diary::getPrimaryEmotion, Collectors.counting()))
+                    .entrySet().stream()
+                    .max(Map.Entry.comparingByValue())
+                    .map(Map.Entry::getKey)
+                    .orElse(null);
+
+            Double avgScore = weekDiaries.stream()
+                    .filter(d -> d.getEmotionScore() != null)
+                    .mapToDouble(Diary::getEmotionScore)
+                    .average()
+                    .orElse(0.0);
+
+            summaries.add(MonthlyReportResponse.WeeklySummary.builder()
+                    .weekNumber(week)
+                    .diaryCount(weekDiaries.size())
+                    .dominantEmotion(dominant)
+                    .averageScore(avgScore)
+                    .build());
+        }
+
+        return summaries;
     }
 
     private MonthlyReportResponse.EmotionComparison compareWithLastMonth(

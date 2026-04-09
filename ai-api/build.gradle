@@ -4,15 +4,15 @@
 
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.5'
-    id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.springframework.boot' version '4.0.5'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.mindcompass'
 version = '0.0.1-SNAPSHOT'
 
 java {
-    sourceCompatibility = '17'
+    sourceCompatibility = '21'
 }
 
 configurations {
@@ -28,7 +28,7 @@ repositories {
 
 // Spring AI BOM 버전
 ext {
-    springAiVersion = '0.8.1'
+    springAiVersion = '1.0.0'
 }
 
 dependencies {
@@ -39,7 +39,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     // Spring AI - OpenAI
-    implementation "org.springframework.ai:spring-ai-openai-spring-boot-starter:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-starter-model-openai"
 
     // Validation
     implementation 'org.springframework.boot:spring-boot-starter-validation'

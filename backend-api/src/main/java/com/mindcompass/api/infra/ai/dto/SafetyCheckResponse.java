@@ -4,11 +4,15 @@
 
 package com.mindcompass.api.infra.ai.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class SafetyCheckResponse {
 
     private Boolean isRisky;             // 위험 여부

@@ -13,6 +13,9 @@ class EmotionClassifyRequest(BaseModel):
     """
 
     text: str = Field(..., description="감정분류 대상 텍스트")
+    returnTopK: int | None = Field(
+        default=3, description="반환할 상위 감정 개수 (선택)"
+    )
     sessionId: str | None = Field(
         default=None, description="추적용 세션 ID (선택)"
     )
@@ -21,7 +24,7 @@ class EmotionClassifyRequest(BaseModel):
 class EmotionScore(BaseModel):
     """개별 감정의 확률 점수."""
 
-    emotion: str = Field(..., description="감정 레이블 (예: joy, sadness)")
+    label: str = Field(..., description="감정 레이블 (예: joy, sadness)")
     score: float = Field(..., ge=0.0, le=1.0, description="확률 점수 (0~1)")
 
 
