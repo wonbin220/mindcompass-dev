@@ -308,3 +308,55 @@ Phase 7: Safety Net (ai-api 내부 구조 학습)
 
 ### 주의사항
 - `dataset_sample_80_input_ko.csv`는 기존 `dataset_ko.csv`의 동일 행 번역을 재사용했으므로 원문 정합성이 유지된다.
+
+---
+
+## Session Handoff - 2026-04-12 (Opus)
+
+### 완료
+- **Phase 2 User 테스트 완료**: UserServiceTest(6개), UserControllerTest(3개) 작성 및 통과
+- **Phase 8 Report Controller 테스트 완료**: ReportControllerTest(4개) 작성 및 통과
+- **Apidog 컬렉션 생성**: Chat, Report, Calendar 3개 컬렉션 신규 생성
+- **Apidog 실제 테스트 완료**: Auth, User, Diary, Calendar, Chat, Report 전체 API 동작 확인
+- **학습 문서 신규 작성**: `docs/USER_API_LEARNING.md`
+- **학습 문서 업데이트**: `docs/REPORT_API_LEARNING.md`에 ReportControllerTest 가이드 추가
+- **CLAUDE.md에 김영한 강사 페르소나 추가**: 학습-first 모드 설정
+
+### backend-api 테스트 현황 (전체)
+
+| Phase | Service Test | Controller Test | Apidog |
+|-------|-------------|-----------------|--------|
+| 2 Auth | ✅ | ✅ | ✅ |
+| 2 User | ✅ | ✅ | ✅ |
+| 3 Diary | ✅ | ✅ | ✅ |
+| 4 Calendar | ✅ | ✅ | ✅ |
+| 6 Chat | ✅ | ✅ | ✅ (fallback 정상) |
+| 8 Report | ✅ | ✅ | ✅ (빈 감정 정상) |
+
+> **backend-api 단독 테스트는 사실상 완료.**
+
+### 진행중
+- 없음
+
+### 다음 작업
+- **Phase 5: AI 연동 학습** (ai-api, ai-api-fastapi 내부 구조 학습)
+- Phase 5, 7 테스트 작성 (Codex 위임 예정)
+- Sonnet 세션으로 진행 권장 (토큰 절약)
+
+### 블로커
+- 없음
+
+### 변경된 파일
+- CLAUDE.md (수정 — 김영한 강사 페르소나 추가)
+- docs/USER_API_LEARNING.md (신규)
+- docs/REPORT_API_LEARNING.md (수정 — 섹션 8 ReportControllerTest 가이드 추가)
+- docs/apidog/MindCompass_Chat_API.postman_collection.json (신규)
+- docs/apidog/MindCompass_Report_API.postman_collection.json (신규)
+- docs/apidog/MindCompass_Calendar_API.postman_collection.json (신규)
+- docs/IMPLEMENTATION_STATUS.md (수정)
+
+### 주의사항
+- Calendar 특정 날짜 조회(GET /calendar/{date})에서 같은 날짜에 일기 2개 이상이면 C002 에러 발생. `findByUserIdAndDiaryDate()`가 Optional 반환이라 중복 시 에러. 서버 재시작(H2 초기화) 후 재테스트하면 해결.
+- Chat Apidog 테스트에서 AI 응답은 fallback("죄송합니다...") — ai-api 미실행 상태에서 정상 동작.
+- Report Apidog 테스트에서 감정 분포는 빈 상태 — AI 미분석 일기라 primaryEmotion=null이므로 정상.
+- UserServiceTest, UserControllerTest, ReportControllerTest는 학습자가 학습 문서를 보고 직접 따라 친 것.
