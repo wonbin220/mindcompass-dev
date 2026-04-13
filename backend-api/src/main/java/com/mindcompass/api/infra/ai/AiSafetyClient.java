@@ -52,7 +52,7 @@ public class AiSafetyClient {
 
         try {
             SafetyCheckResponse response = aiApiWebClient.post()
-                    .uri("/api/v1/safety/check")
+                    .uri("/internal/ai/risk-score")
                     .bodyValue(request)
                     .retrieve()
                     .bodyToMono(SafetyCheckResponse.class)

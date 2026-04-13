@@ -47,7 +47,7 @@ public class AiChatClient {
 
         try {
             ChatResponse response = aiApiWebClient.post()
-                    .uri("/api/v1/chat/reply")
+                    .uri("/internal/ai/generate-reply")
                     .bodyValue(request)
                     .retrieve()
                     .bodyToMono(ChatResponse.class)

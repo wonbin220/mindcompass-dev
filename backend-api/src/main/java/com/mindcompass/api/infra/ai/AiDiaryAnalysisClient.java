@@ -43,7 +43,7 @@ public class AiDiaryAnalysisClient {
 
         try {
             DiaryAnalysisResponse response = aiApiWebClient.post()
-                    .uri("/api/v1/analyze/diary")
+                    .uri("/api/v1/analyze/analyze-diary")
                     .bodyValue(request)
                     .retrieve()
                     .bodyToMono(DiaryAnalysisResponse.class)
