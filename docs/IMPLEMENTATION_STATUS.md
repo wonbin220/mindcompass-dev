@@ -8,15 +8,15 @@
 ## Phase 진행 상황 요약
 
 | Phase | 이름 | 구현 | 테스트 | 학습/검토 | 비고 |
-|-------|------|------|--------|-----------|------|
+  |-------|------|------|--------|-----------|------|
 | 1 | Foundation | ✅ 완료 | - | ✅ | 골격 구조, 공통 모듈, 설정, DB 마이그레이션 |
-| 2 | Auth / User | ✅ 완료 | ✅ 일부 | ⬜ 학습 필요 | Auth 테스트 완료, User 테스트 미작성 |
+| 2 | Auth / User | ✅ 완료 | ✅ 완료 | ⬜ 학습 필요 | Auth + User 테스트 모두 완료 |
 | 3 | Diary CRUD | ✅ 완료 | ✅ 완료 | ✅ 완료 | 9+6=15 테스트, AI fallback 포함 |
 | 4 | Calendar / Emotion | ✅ 완료 | ✅ 완료 | ✅ 완료 | 6+3=9 테스트, 월간 캘린더, 감정별 필터 |
-| 5 | AI 연동 (ai-api + fastapi) | ✅ 완료 | ⬜ 미작성 | ⬜ 학습 필요 | 3개 서버 연동 구조 |
+| 5 | AI 연동 (ai-api + fastapi) | ✅ 완료 | ✅ 완료 | ⬜ 학습 필요 | 3개 서버 연동 구조, ai-api 4개 + fastapi SafetyNet |
 | 6 | Chat | ✅ 완료 | ✅ 완료 | ⬜ 학습 필요 | Safety-first 패턴, 5+5=10 테스트 |
-| 7 | Safety Net | ✅ 완료 | ⬜ 미작성 | ⬜ 학습 필요 | 키워드 분석 + AI 병합 |
-| 8 | Reports | ✅ 완료 | ⬜ 미작성 | ⬜ 학습 필요 | 주간/월간 리포트 + 전월 비교 |
+| 7 | Safety Net | ✅ 완료 | ✅ 완료 | ⬜ 학습 필요 | 키워드 분석 + AI 병합 |
+| 8 | Reports | ✅ 완료 | ✅ 완료 | ⬜ 학습 필요 | 주간/월간 리포트 + 전월 비교, Controller 테스트 완료 |
 
 > **현재 상태**: 모든 Phase의 코드 구현은 완료됨.
 > 앞으로 할 일은 **Phase별 학습 → 테스트 작성 → 코드 검토** 순서로 진행.
@@ -31,7 +31,7 @@
 각 Phase에서 할 일: (1) 학습 문서 읽기 → (2) 코드 읽기 → (3) 로컬에서 API 호출 테스트 → (4) 단위 테스트 작성
 
 ```
-Phase 2: Auth/User  ← 지금 여기부터
+Phase 2: Auth/User  ← 학습 문서 읽기 권장
 Phase 3: Diary CRUD
 Phase 4: Calendar
 Phase 6: Chat (Phase 5보다 먼저 - backend-api 관점)
@@ -75,8 +75,8 @@ Phase 7: Safety Net (ai-api 내부 구조 학습)
 ### 테스트 상태
 - [x] `AuthServiceTest.java` — 서비스 단위 테스트
 - [x] `AuthControllerTest.java` — 컨트롤러 단위 테스트
-- [ ] `UserServiceTest.java` — **작성 필요**
-- [ ] `UserControllerTest.java` — **작성 필요**
+- [x] `UserServiceTest.java` — 6개 테스트 완료
+- [x] `UserControllerTest.java` — 3개 테스트 완료
 
 ---
 
