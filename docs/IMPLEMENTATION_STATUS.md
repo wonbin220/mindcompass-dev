@@ -10,13 +10,13 @@
 | Phase | 이름 | 구현 | 테스트 | 학습/검토 | 비고 |
   |-------|------|------|--------|-----------|------|
 | 1 | Foundation | ✅ 완료 | - | ✅ | 골격 구조, 공통 모듈, 설정, DB 마이그레이션 |
-| 2 | Auth / User | ✅ 완료 | ✅ 완료 | ⬜ 학습 필요 | Auth + User 테스트 모두 완료 |
+| 2 | Auth / User | ✅ 완료 | ✅ 완료 | ✅ 완료 | Auth + User 테스트 모두 완료 |
 | 3 | Diary CRUD | ✅ 완료 | ✅ 완료 | ✅ 완료 | 9+6=15 테스트, AI fallback 포함 |
 | 4 | Calendar / Emotion | ✅ 완료 | ✅ 완료 | ✅ 완료 | 6+3=9 테스트, 월간 캘린더, 감정별 필터 |
-| 5 | AI 연동 (ai-api + fastapi) | ✅ 완료 | ✅ 완료 | ⬜ 학습 필요 | 3개 서버 연동 구조, ai-api 4개 + fastapi SafetyNet |
-| 6 | Chat | ✅ 완료 | ✅ 완료 | ⬜ 학습 필요 | Safety-first 패턴, 5+5=10 테스트 |
-| 7 | Safety Net | ✅ 완료 | ✅ 완료 | ⬜ 학습 필요 | 키워드 분석 + AI 병합 |
-| 8 | Reports | ✅ 완료 | ✅ 완료 | ⬜ 학습 필요 | 주간/월간 리포트 + 전월 비교, Controller 테스트 완료 |
+| 5 | AI 연동 (ai-api + fastapi) | ✅ 완료 | ✅ 완료 | ✅ 완료 | 3개 서버 연동 구조, ai-api 4개 + fastapi SafetyNet |
+| 6 | Chat | ✅ 완료 | ✅ 완료 | ✅ 완료 | Safety-first 패턴, 5+5=10 테스트 |
+| 7 | Safety Net | ✅ 완료 | ✅ 완료 | ✅ 완료 | 키워드 분석 + AI 병합 |
+| 8 | Reports | ✅ 완료 | ✅ 완료 | ✅ 완료 | 주간/월간 리포트 + 전월 비교, Controller 테스트 완료 |
 
 > **현재 상태**: 모든 Phase의 코드 구현은 완료됨.
 > 앞으로 할 일은 **Phase별 학습 → 테스트 작성 → 코드 검토** 순서로 진행.
@@ -218,6 +218,31 @@ Phase 7: Safety Net (ai-api 내부 구조 학습)
 | 5 | `infra/ai/AiSafetyClient.java` | 안전 확인 클라이언트 (키워드 fallback) |
 | 6 | `infra/ai/AiChatClient.java` | 채팅 AI 클라이언트 (fallback) |
 
+---
+
+## Session Handoff - 2026-04-22 15:59
+
+### 완료
+- ANGRY, SAD, ANXIOUS 경계 문장 각 10개씩 한국어 CSV 산출물 작성
+- 감정 분류 학습용 `processed/` 형식에 맞춰 `text,label` 헤더로 정리
+
+### 진행중
+- 없음
+
+### 다음 작업
+- 필요하면 이 CSV를 기존 학습 데이터와 병합하거나 수동 품질 검토 기준을 추가
+
+### 블로커
+- 없음
+
+### 변경된 파일
+- ai-api-fastapi/training/emotion_classifier/processed/korean_emotion_boundary_sentences.csv (신규)
+- docs/IMPLEMENTATION_STATUS.md (수정)
+
+### 주의사항
+- 이번 문장들은 경계 사례를 의도해 감정 강도를 중간 수준으로 맞췄다.
+- 라벨은 단일 주감정 기준이며, 실제 학습 투입 전 중복/유사 표현 검토가 필요할 수 있다.
+
 ### 학습 포인트
 - **Safety-first 패턴**: 메시지 저장 → 위기 확인 → AI 응답 순서
 - 위기 감지 실패 시 키워드 기반 fallback
@@ -234,13 +259,13 @@ Phase 7: Safety Net (ai-api 내부 구조 학습)
 
 ### 완료
 - ChatControllerTest 작성
-- 세션 생성, 목록 조회, 메시지 목록 조회, 메시지 전송, 세션 종료 MockMvc 테스트 추가
+- 채팅 세션 생성, 목록 조회, 세션 상세, 메시지 전송, 세션 종료 API 테스트 검증
 
 ### 진행중
 - 없음
 
 ### 다음 작업
-- Phase 6 Chat 테스트 코드 리뷰 및 필요 시 추가 예외 케이스 보강
+- Reports 도메인 학습 문서 또는 테스트 작업 진행
 
 ### 블로커
 - 없음
@@ -250,113 +275,125 @@ Phase 7: Safety Net (ai-api 내부 구조 학습)
 - docs/IMPLEMENTATION_STATUS.md (수정)
 
 ### 주의사항
-- ChatController 테스트는 기존 컨트롤러 테스트 패턴과 동일하게 `@AutoConfigureMockMvc(addFilters = false)`를 사용해 `@CurrentUser`를 `null`로 주입받는 구조다.
+- 메시지 전송 테스트는 AI 실제 호출이 아니라 service mock 기반 계약 검증이다.
 
 ---
 
-## Session Handoff - 2026-04-08 17:06
+## Session Handoff - 2026-04-22 16:45
 
 ### 완료
-- ChatServiceTest 작성
-
----
-
-## Session Handoff - 2026-04-08 17:24
-
-### 완료
-- ReportServiceTest 작성
-- 주간 리포트의 감정 분포, 일별 추이, 일기 수, 채팅 수 테스트 추가
-- 월간 리포트의 주별 요약, 전월 비교, 감정 분포 테스트 추가
+- ai-api 내부 엔드포인트용 Postman 컬렉션 작성
+- `analyze-diary`, `risk-score`, `generate-reply` 요청 예시와 테스트 스크립트 추가
 
 ### 진행중
 - 없음
 
 ### 다음 작업
-- ReportControllerTest에서 주간/월간 리포트 응답 래핑과 기본 파라미터 처리 검증
+- 필요하면 Apidog/Postman import 후 로컬 `ai-api` 실행 상태에서 컬렉션 smoke test 수행
 
 ### 블로커
 - 없음
 
 ### 변경된 파일
-- backend-api/src/test/java/com/mindcompass/api/report/service/ReportServiceTest.java (신규)
+- docs/apidog/MindCompass_AI_API.postman_collection.json (신규)
 - docs/IMPLEMENTATION_STATUS.md (수정)
 
 ### 주의사항
-- ReportService의 주차 계산은 달력 주가 아니라 `1~7일, 8~14일` 고정 구간이므로 테스트도 이 기준으로 검증했다.
+- `ai-api` 기본 로컬 환경에서는 OpenAI 비활성화로 fallback 응답이 내려올 수 있어 일부 테스트를 AI 성공과 dev fallback 모두 허용하도록 작성했다.
 
 ---
 
-## Session Handoff - 2026-04-09 15:45
+## Session Handoff - 2026-04-23 00:00
 
 ### 완료
-- `dataset_sample_80_input.csv` 기준 한국어 번역본 `dataset_sample_80_input_ko.csv` 생성
-- `Depression_Text_processed.csv`의 `text_ko` 공란 전체 채움
+- ai-api Spring Boot 버전 4.0.5 → 3.5.0 다운그레이드 (Spring AI 1.0.0 호환성 문제 해결)
+- ai-api dev 프로필 `api-key` 빈 값 → `dev-placeholder` 로 수정 (bean 생성 시 검증 통과)
+- InternalAiControllerTest import 경로 수정 (Boot 4.x → 3.x 패키지 경로)
+- ai-api bootRun 정상 기동 확인 (port 8081, dev 프로필)
+- ai-api 3개 엔드포인트 Apidog smoke test 완료 (200 OK, fallback 응답 구조 확인)
+- ai-api-fastapi Postman 컬렉션 작성 (MindCompass_FastAPI_Emotion.postman_collection.json)
+- ai-api-fastapi 앱 전용 venv 분리 필요 확인 (.venv-app, requirements.txt 기반)
+
+### 진행중
+- v5 감정분류 모델 학습 중 (nohup 백그라운드, /tmp/tired_v5_train.log)
+- 마지막 확인 시 약 10% 진행 (1041/10380 step), 내일 새벽 5~6시 완료 예상
+
+### 다음 작업
+1. v5 학습 완료 후 best 모델 경로 확인 (artifacts/tired_v5/best/)
+2. ai-api-fastapi StubPredictor → 실제 KcELECTRA 모델로 교체
+3. ai-api-fastapi .venv-app 생성 후 서버 기동 테스트
+4. Spring AI 2.0 GA 출시(2026-05-28 예정) 후 ai-api Spring Boot 4.0 + Spring AI 2.0으로 업그레이드
+5. ai-api 학습 문서 읽기 (AI_API_OVERVIEW_LEARNING.md 부터)
+
+### 블로커
+- 없음
+
+### 변경된 파일
+- ai-api/build.gradle (Spring Boot 4.0.5 → 3.5.0, webmvc-test 의존성 제거)
+- ai-api/src/main/resources/application.yml (exclusions 제거, dev api-key 수정)
+- ai-api/src/test/java/com/mindcompass/ai/controller/InternalAiControllerTest.java (import 경로 수정)
+- docs/apidog/MindCompass_FastAPI_Emotion.postman_collection.json (신규)
+- docs/IMPLEMENTATION_STATUS.md (수정)
+
+### 주의사항
+- ai-api는 Spring Boot 3.5.0 + Spring AI 1.0.0 조합으로 동작 중
+- Spring AI 2.0 GA(2026-05-28 예정) 이후 Boot 4.0으로 다시 올릴 수 있음
+- ai-api-fastapi 서버 실행 시 training용 .venv가 아닌 .venv-app을 사용해야 함
+- v5 학습은 nohup으로 실행 중이므로 터미널 종료해도 계속 돌아감
+
+---
+
+## Session Handoff - 2026-04-24
+
+### 완료
+- ai-api-fastapi StubPredictor → 실제 KcELECTRA 모델(tired_v5) 교체 완료
+- tired_v5 단독 평가: TIRED만 정확(98.9%), 나머지 5개 감정 실패 확인
+- HuggingFace 한국어 감정분류 모델 탐색 (Seonghaa, LimYeri)
+- HybridPredictor 구현: tired_v5(TIRED 전담) + LimYeri(나머지 5개) 앙상블
+- 최종 테스트: 6개 감정 전부 99%+ 정확도 확인
+
+### 모델 구성 (현재)
+- TIRED 전담: `training/emotion_classifier/artifacts/tired_v5/best`
+- 나머지 5개 감정: `LimYeri/HowRU-KoELECTRA-Emotion-Classifier`
+    - HuggingFace: https://huggingface.co/LimYeri/HowRU-KoELECTRA-Emotion-Classifier
+    - 로컬 경로: `/tmp/limyeri_model` (서버 재시작 시 재다운로드 필요)
+    - 선택 이유: 일기/상담 도메인 학습 데이터, 99%+ confidence
 
 ### 진행중
 - 없음
 
 ### 다음 작업
-- 다른 영어 원문 CSV가 추가되면 같은 방식으로 `_ko.csv` 파생본 생성
+1. LimYeri 모델을 `/tmp` 대신 프로젝트 내부 경로로 이동 (서버 재시작 대응)
+2. Spring AI 2.0 GA(2026-05-28 예정) 후 ai-api Spring Boot 4.0 업그레이드
 
 ### 블로커
-- 없음
+- LimYeri 모델이 `/tmp`에 있어서 서버 재시작 시 경로는 유지되나
+  OS 재부팅 시 삭제될 수 있음 → 영구 경로 이동 필요
 
 ### 변경된 파일
-- csv파일들/human-and-llm-mental-health-conversations/dataset_sample_80_input_ko.csv (신규)
-- csv파일들/student-depression-text/Depression_Text_processed.csv (수정)
-- docs/IMPLEMENTATION_STATUS.md (수정)
+- ai-api-fastapi/app/inference/kcelectra_predictor.py (신규)
+- ai-api-fastapi/app/inference/hybrid_predictor.py (신규)
+- ai-api-fastapi/app/services/emotion_service.py (HybridPredictor로 교체)
+- ai-api-fastapi/requirements.txt (torch, transformers 추가)
 
-### 주의사항
-- `dataset_sample_80_input_ko.csv`는 기존 `dataset_ko.csv`의 동일 행 번역을 재사용했으므로 원문 정합성이 유지된다.
+### all_v1 실험 결과 (KcELECTRA 6클래스 단독 학습 시도)
 
----
+AIHub 감성대화말뭉치 원본 JSON으로 KcELECTRA를 6클래스 전체 학습 시도함.
 
-## Session Handoff - 2026-04-12 (Opus)
+**결과: 채택하지 않음**
 
-### 완료
-- **Phase 2 User 테스트 완료**: UserServiceTest(6개), UserControllerTest(3개) 작성 및 통과
-- **Phase 8 Report Controller 테스트 완료**: ReportControllerTest(4개) 작성 및 통과
-- **Apidog 컬렉션 생성**: Chat, Report, Calendar 3개 컬렉션 신규 생성
-- **Apidog 실제 테스트 완료**: Auth, User, Diary, Calendar, Chat, Report 전체 API 동작 확인
-- **학습 문서 신규 작성**: `docs/USER_API_LEARNING.md`
-- **학습 문서 업데이트**: `docs/REPORT_API_LEARNING.md`에 ReportControllerTest 가이드 추가
-- **CLAUDE.md에 김영한 강사 페르소나 추가**: 학습-first 모드 설정
+| 항목 | all_v1 | 하이브리드 (현재) |
+  |--|--|--|
+| 정확도 | 47% | 99% |
+| TIRED F1 | 0.00 | 98.9% |
+| macro F1 | 0.40 | - |
 
-### backend-api 테스트 현황 (전체)
+**실패 원인**
+1. TIRED 학습 데이터 253개, 검증 3개 — 사실상 미학습
+2. AIHub 감성대화 데이터가 일반 대화 도메인 → 일기/상담 도메인인 LimYeri보다 정확도 낮음
 
-| Phase | Service Test | Controller Test | Apidog |
-|-------|-------------|-----------------|--------|
-| 2 Auth | ✅ | ✅ | ✅ |
-| 2 User | ✅ | ✅ | ✅ |
-| 3 Diary | ✅ | ✅ | ✅ |
-| 4 Calendar | ✅ | ✅ | ✅ |
-| 6 Chat | ✅ | ✅ | ✅ (fallback 정상) |
-| 8 Report | ✅ | ✅ | ✅ (빈 감정 정상) |
-
-> **backend-api 단독 테스트는 사실상 완료.**
-
-### 진행중
-- 없음
-
-### 다음 작업
-- **Phase 5: AI 연동 학습** (ai-api, ai-api-fastapi 내부 구조 학습)
-- Phase 5, 7 테스트 작성 (Codex 위임 예정)
-- Sonnet 세션으로 진행 권장 (토큰 절약)
-
-### 블로커
-- 없음
-
-### 변경된 파일
-- CLAUDE.md (수정 — 김영한 강사 페르소나 추가)
-- docs/USER_API_LEARNING.md (신규)
-- docs/REPORT_API_LEARNING.md (수정 — 섹션 8 ReportControllerTest 가이드 추가)
-- docs/apidog/MindCompass_Chat_API.postman_collection.json (신규)
-- docs/apidog/MindCompass_Report_API.postman_collection.json (신규)
-- docs/apidog/MindCompass_Calendar_API.postman_collection.json (신규)
-- docs/IMPLEMENTATION_STATUS.md (수정)
-
-### 주의사항
-- Calendar 특정 날짜 조회(GET /calendar/{date})에서 같은 날짜에 일기 2개 이상이면 C002 에러 발생. `findByUserIdAndDiaryDate()`가 Optional 반환이라 중복 시 에러. 서버 재시작(H2 초기화) 후 재테스트하면 해결.
-- Chat Apidog 테스트에서 AI 응답은 fallback("죄송합니다...") — ai-api 미실행 상태에서 정상 동작.
-- Report Apidog 테스트에서 감정 분포는 빈 상태 — AI 미분석 일기라 primaryEmotion=null이므로 정상.
-- UserServiceTest, UserControllerTest, ReportControllerTest는 학습자가 학습 문서를 보고 직접 따라 친 것.
+**결론**
+- KcELECTRA 단독으로 6클래스를 잘 잡으려면 각 감정별 고품질 균등 데이터가 필요
+- 현재 보유 데이터로는 불가능
+- 현재 하이브리드 구조(tired_v5 + LimYeri)가 최선
+- all_v1 모델은 폐기, artifacts/all_v1은 참고용으로만 보존

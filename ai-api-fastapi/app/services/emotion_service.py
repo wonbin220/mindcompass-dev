@@ -5,7 +5,7 @@
 import logging
 
 from app.inference.base_predictor import BasePredictor
-from app.inference.stub_predictor import StubPredictor
+from app.inference.hybrid_predictor import HybridPredictor
 from app.schemas.emotion import (
     EmotionClassifyRequest,
     EmotionClassifyResponse,
@@ -27,7 +27,7 @@ def get_emotion_service() -> "EmotionService":
     """
     global _emotion_service
     if _emotion_service is None:
-        predictor = StubPredictor()
+        predictor = HybridPredictor()
         _emotion_service = EmotionService(predictor)
     return _emotion_service
 
