@@ -27,6 +27,9 @@ public class WebClientConfig {
     @Value("${ai.api.timeout-ms:5000}")
     private int timeoutMs;
 
+    @Value("${ai.api.retry-count:2}")
+    private int retryCount;
+
     @Bean
     public WebClient aiApiWebClient() {
         HttpClient httpClient = HttpClient.create()

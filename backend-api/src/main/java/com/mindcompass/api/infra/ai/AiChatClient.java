@@ -13,7 +13,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.util.retry.Retry;
 
+import java.time.Duration;
 import java.util.Optional;
 
 @Slf4j
@@ -50,7 +52,11 @@ public class AiChatClient {
                     .uri("/internal/ai/generate-reply")
                     .bodyValue(request)
                     .retrieve()
+                    .onStatus(status -> status.is5xxServerError(), clientResponse -> clientResponse.createException()) // 5xx만 retry 대상으로
                     .bodyToMono(ChatResponse.class)
+                    .retryWhen(
+                            Retry.backoff(2, Duration.ofMillis(500)) // 최대 2회, 500ms 간격
+                                    .filter(throwable -> isRetryable(throwable)))
                     .block();
 
             if (response != null) {
@@ -78,5 +84,14 @@ public class AiChatClient {
                 .message(FALLBACK_MESSAGE)
                 .isSafetyTriggered(false)
                 .build();
+    }
+
+    private boolean isRetryable(Throwable throwable) {
+        if (throwable instanceof WebClientResponseException e) {
+            // 5xx만 재시도, 4xx는 재시도 안 함
+            return e.getStatusCode().is5xxServerError();
+        }
+        // 연결 실패, timeout -> 재시도
+        return true;
     }
 }

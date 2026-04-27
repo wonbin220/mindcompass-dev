@@ -8,16 +8,13 @@ server:
 spring:
   application:
     name: ai-api
-
   profiles:
     active: dev  # 기본 프로필: dev (zero-cost)
 
   # Jackson 설정
   jackson:
-    serialization:
-      write-dates-as-timestamps: false
     deserialization:
-      fail-on-unknown-properties: false
+      FAIL_ON_UNKNOWN_PROPERTIES: false
 
 # Actuator 설정
 management:
@@ -51,7 +48,7 @@ spring:
   # Spring AI 비활성화 (autoconfigure 스킵)
   ai:
     openai:
-      api-key: ""  # 빈 값 - ChatClient Bean 생성 안 됨
+      api-key: "dev-placeholder"  # dev 모드에서는 실제 호출 안 함, bean 생성용 더미 키
 
 logging:
   level:

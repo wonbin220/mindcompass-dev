@@ -93,7 +93,9 @@ class AiSafetyClientTest {
         given(requestBodyUriSpec.uri(anyString())).willReturn(requestBodySpec);
         doReturn(requestHeadersSpec).when(requestBodySpec).bodyValue(any());
         given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
+        given(responseSpec.onStatus(any(), any())).willReturn(responseSpec); // onStatus 체인 무시
         given(responseSpec.bodyToMono(SafetyCheckResponse.class)).willReturn(mono);
+        given(mono.retryWhen(any())).willReturn(mono); // retryWhen 체인 무시
         given(mono.block()).willReturn(aiResponse);
 
         SafetyCheckResponse response = aiSafetyClient.checkSafety(request);
@@ -115,7 +117,9 @@ class AiSafetyClientTest {
         given(requestBodyUriSpec.uri(anyString())).willReturn(requestBodySpec);
         doReturn(requestHeadersSpec).when(requestBodySpec).bodyValue(any());
         given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
+        given(responseSpec.onStatus(any(), any())).willReturn(responseSpec);
         given(responseSpec.bodyToMono(SafetyCheckResponse.class)).willReturn(mono);
+        given(mono.retryWhen(any())).willReturn(mono);
         given(mono.block()).willReturn(null);
 
         SafetyCheckResponse response = aiSafetyClient.checkSafety(request);
@@ -135,7 +139,9 @@ class AiSafetyClientTest {
         given(requestBodyUriSpec.uri(anyString())).willReturn(requestBodySpec);
         doReturn(requestHeadersSpec).when(requestBodySpec).bodyValue(any());
         given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
+        given(responseSpec.onStatus(any(), any())).willReturn(responseSpec);
         given(responseSpec.bodyToMono(SafetyCheckResponse.class)).willReturn(mono);
+        given(mono.retryWhen(any())).willReturn(mono);
         given(mono.block()).willThrow(new RuntimeException("연결 실패"));
 
         SafetyCheckResponse response = aiSafetyClient.checkSafety(request);

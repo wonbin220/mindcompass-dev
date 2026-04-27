@@ -37,6 +37,7 @@ ai:
     enabled: ${AI_API_ENABLED:false}  # 로컬에서는 기본 비활성화
     base-url: ${AI_API_BASE_URL:http://localhost:8081}
     timeout-ms: ${AI_API_TIMEOUT_MS:5000}
+    retry-count : 2
 
 # 로깅 설정
 logging:
