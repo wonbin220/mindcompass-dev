@@ -53,12 +53,13 @@ class ReportServiceTest {
         User user = createUser(userId);
 
         List<Diary> diaries = List.of(
-                createDiary(user, LocalDate.of(2026, 4, 10), "기쁨", 0.8),
-                createDiary(user, LocalDate.of(2026, 4, 8), "불안", 0.4),
-                createDiary(user, LocalDate.of(2026, 4, 7), "기쁨", 0.6)
+                createDiary(user, LocalDate.of(2026, 4, 10), "기쁨", 4),
+                createDiary(user, LocalDate.of(2026, 4, 8), "불안", 2),
+                createDiary(user, LocalDate.of(2026, 4, 7), "기쁨", 3)
         );
 
-        given(diaryRepository.findByUserIdAndDiaryDateBetweenOrderByDiaryDateDesc(userId, startDate, endDate))
+        given(diaryRepository.findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
+                userId, startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay()))
                 .willReturn(diaries);
         given(chatSessionRepository.countByUserIdAndCreatedAtBetween(
                 userId,
@@ -74,7 +75,7 @@ class ReportServiceTest {
         assertThat(response.getEndDate()).isEqualTo(endDate);
         assertThat(response.getTotalDiaries()).isEqualTo(3);
         assertThat(response.getTotalChats()).isEqualTo(3);
-        assertThat(response.getAverageEmotionScore()).isEqualTo(0.6);
+        assertThat(response.getAverageEmotionScore()).isEqualTo(3.0);
         assertThat(response.getEmotionDistribution())
                 .containsEntry("기쁨", 2L)
                 .containsEntry("불안", 1L);
@@ -86,11 +87,11 @@ class ReportServiceTest {
         assertThat(response.getDailyTrends().get(0).getHasDiary()).isFalse();
         assertThat(response.getDailyTrends().get(1).getDate()).isEqualTo(LocalDate.of(2026, 4, 7));
         assertThat(response.getDailyTrends().get(1).getEmotion()).isEqualTo("기쁨");
-        assertThat(response.getDailyTrends().get(1).getScore()).isEqualTo(0.6);
+        assertThat(response.getDailyTrends().get(1).getScore()).isEqualTo(3.0);
         assertThat(response.getDailyTrends().get(1).getHasDiary()).isTrue();
         assertThat(response.getDailyTrends().get(2).getDate()).isEqualTo(LocalDate.of(2026, 4, 8));
         assertThat(response.getDailyTrends().get(2).getEmotion()).isEqualTo("불안");
-        assertThat(response.getDailyTrends().get(2).getScore()).isEqualTo(0.4);
+        assertThat(response.getDailyTrends().get(2).getScore()).isEqualTo(2.0);
         assertThat(response.getDailyTrends().get(2).getHasDiary()).isTrue();
         assertThat(response.getDailyTrends().get(3).getDate()).isEqualTo(LocalDate.of(2026, 4, 9));
         assertThat(response.getDailyTrends().get(3).getEmotion()).isNull();
@@ -98,11 +99,12 @@ class ReportServiceTest {
         assertThat(response.getDailyTrends().get(3).getHasDiary()).isFalse();
         assertThat(response.getDailyTrends().get(4).getDate()).isEqualTo(LocalDate.of(2026, 4, 10));
         assertThat(response.getDailyTrends().get(4).getEmotion()).isEqualTo("기쁨");
-        assertThat(response.getDailyTrends().get(4).getScore()).isEqualTo(0.8);
+        assertThat(response.getDailyTrends().get(4).getScore()).isEqualTo(4.0);
         assertThat(response.getDailyTrends().get(4).getHasDiary()).isTrue();
         assertThat(response.getAiSummary()).isNull();
 
-        verify(diaryRepository).findByUserIdAndDiaryDateBetweenOrderByDiaryDateDesc(userId, startDate, endDate);
+        verify(diaryRepository).findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
+                userId, startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
         verify(chatSessionRepository).countByUserIdAndCreatedAtBetween(
                 userId,
                 startDate.atStartOfDay(),
@@ -124,19 +126,21 @@ class ReportServiceTest {
         User user = createUser(userId);
 
         List<Diary> currentMonthDiaries = List.of(
-                createDiary(user, LocalDate.of(2026, 1, 30), "기쁨", 0.9),
-                createDiary(user, LocalDate.of(2026, 1, 15), "슬픔", 0.6),
-                createDiary(user, LocalDate.of(2026, 1, 9), "기쁨", 0.7),
-                createDiary(user, LocalDate.of(2026, 1, 2), "불안", 0.8)
+                createDiary(user, LocalDate.of(2026, 1, 30), "기쁨", 5),
+                createDiary(user, LocalDate.of(2026, 1, 15), "슬픔", 3),
+                createDiary(user, LocalDate.of(2026, 1, 9), "기쁨", 4),
+                createDiary(user, LocalDate.of(2026, 1, 2), "불안", 4)
         );
         List<Diary> lastMonthDiaries = List.of(
-                createDiary(user, LocalDate.of(2025, 12, 20), "불안", 0.5),
-                createDiary(user, LocalDate.of(2025, 12, 5), "슬픔", 0.4)
+                createDiary(user, LocalDate.of(2025, 12, 20), "불안", 2),
+                createDiary(user, LocalDate.of(2025, 12, 5), "슬픔", 2)
         );
 
-        given(diaryRepository.findByUserIdAndDiaryDateBetweenOrderByDiaryDateDesc(userId, currentStart, currentEnd))
+        given(diaryRepository.findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
+                userId, currentStart.atStartOfDay(), currentEnd.plusDays(1).atStartOfDay()))
                 .willReturn(currentMonthDiaries);
-        given(diaryRepository.findByUserIdAndDiaryDateBetweenOrderByDiaryDateDesc(userId, lastStart, lastEnd))
+        given(diaryRepository.findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
+                userId, lastStart.atStartOfDay(), lastEnd.plusDays(1).atStartOfDay()))
                 .willReturn(lastMonthDiaries);
         given(chatSessionRepository.countByUserIdAndCreatedAtBetween(
                 userId,
@@ -152,7 +156,7 @@ class ReportServiceTest {
         assertThat(response.getMonth()).isEqualTo(1);
         assertThat(response.getTotalDiaries()).isEqualTo(4);
         assertThat(response.getTotalChats()).isEqualTo(5);
-        assertThat(response.getAverageEmotionScore()).isEqualTo(0.75);
+        assertThat(response.getAverageEmotionScore()).isEqualTo(4.0);
         assertThat(response.getEmotionDistribution())
                 .containsEntry("기쁨", 2L)
                 .containsEntry("슬픔", 1L)
@@ -162,15 +166,15 @@ class ReportServiceTest {
         assertThat(response.getWeeklySummaries().get(0).getWeekNumber()).isEqualTo(1);
         assertThat(response.getWeeklySummaries().get(0).getDiaryCount()).isEqualTo(1);
         assertThat(response.getWeeklySummaries().get(0).getDominantEmotion()).isEqualTo("불안");
-        assertThat(response.getWeeklySummaries().get(0).getAverageScore()).isEqualTo(0.8);
+        assertThat(response.getWeeklySummaries().get(0).getAverageScore()).isEqualTo(4.0);
         assertThat(response.getWeeklySummaries().get(1).getWeekNumber()).isEqualTo(2);
         assertThat(response.getWeeklySummaries().get(1).getDiaryCount()).isEqualTo(1);
         assertThat(response.getWeeklySummaries().get(1).getDominantEmotion()).isEqualTo("기쁨");
-        assertThat(response.getWeeklySummaries().get(1).getAverageScore()).isEqualTo(0.7);
+        assertThat(response.getWeeklySummaries().get(1).getAverageScore()).isEqualTo(4.0);
         assertThat(response.getWeeklySummaries().get(2).getWeekNumber()).isEqualTo(3);
         assertThat(response.getWeeklySummaries().get(2).getDiaryCount()).isEqualTo(1);
         assertThat(response.getWeeklySummaries().get(2).getDominantEmotion()).isEqualTo("슬픔");
-        assertThat(response.getWeeklySummaries().get(2).getAverageScore()).isEqualTo(0.6);
+        assertThat(response.getWeeklySummaries().get(2).getAverageScore()).isEqualTo(3.0);
         assertThat(response.getWeeklySummaries().get(3).getWeekNumber()).isEqualTo(4);
         assertThat(response.getWeeklySummaries().get(3).getDiaryCount()).isEqualTo(0);
         assertThat(response.getWeeklySummaries().get(3).getDominantEmotion()).isNull();
@@ -178,14 +182,16 @@ class ReportServiceTest {
         assertThat(response.getWeeklySummaries().get(4).getWeekNumber()).isEqualTo(5);
         assertThat(response.getWeeklySummaries().get(4).getDiaryCount()).isEqualTo(1);
         assertThat(response.getWeeklySummaries().get(4).getDominantEmotion()).isEqualTo("기쁨");
-        assertThat(response.getWeeklySummaries().get(4).getAverageScore()).isEqualTo(0.9);
-        assertThat(response.getComparisonWithLastMonth().getScoreDiff()).isEqualTo(0.3);
+        assertThat(response.getWeeklySummaries().get(4).getAverageScore()).isEqualTo(5.0);
+        assertThat(response.getComparisonWithLastMonth().getScoreDiff()).isEqualTo(2.0);
         assertThat(response.getComparisonWithLastMonth().getDiaryCountDiff()).isEqualTo(2);
         assertThat(response.getComparisonWithLastMonth().getTrend()).isEqualTo("improving");
         assertThat(response.getAiInsight()).isNull();
 
-        verify(diaryRepository).findByUserIdAndDiaryDateBetweenOrderByDiaryDateDesc(userId, currentStart, currentEnd);
-        verify(diaryRepository).findByUserIdAndDiaryDateBetweenOrderByDiaryDateDesc(userId, lastStart, lastEnd);
+        verify(diaryRepository).findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
+                userId, currentStart.atStartOfDay(), currentEnd.plusDays(1).atStartOfDay());
+        verify(diaryRepository).findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
+                userId, lastStart.atStartOfDay(), lastEnd.plusDays(1).atStartOfDay());
         verify(chatSessionRepository).countByUserIdAndCreatedAtBetween(
                 userId,
                 currentStart.atStartOfDay(),
@@ -196,21 +202,22 @@ class ReportServiceTest {
     private User createUser(Long userId) {
         User user = User.builder()
                 .email("report@test.com")
-                .password("encodedPassword")
-                .name("report-user")
+                .passwordHash("encodedPassword")
+                .nickname("report-user")
                 .build();
         ReflectionTestUtils.setField(user, "id", userId);
         return user;
     }
 
-    private Diary createDiary(User user, LocalDate diaryDate, String emotion, double emotionScore) {
+    private Diary createDiary(User user, LocalDate diaryDate, String emotion, int emotionIntensity) {
         Diary diary = Diary.builder()
                 .user(user)
                 .title("리포트 테스트 일기")
                 .content("테스트용 감정 기록")
-                .diaryDate(diaryDate)
+                .writtenAt(diaryDate.atTime(21, 0))
+                .primaryEmotion(emotion)
+                .emotionIntensity(emotionIntensity)
                 .build();
-        diary.applyAnalysis(emotion, emotionScore, "요약", 10);
         ReflectionTestUtils.setField(diary, "createdAt", LocalDateTime.of(2026, 4, 8, 17, 20));
         ReflectionTestUtils.setField(diary, "updatedAt", LocalDateTime.of(2026, 4, 8, 17, 20));
         return diary;

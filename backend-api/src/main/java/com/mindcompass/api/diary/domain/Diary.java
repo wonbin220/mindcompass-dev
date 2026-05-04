@@ -1,7 +1,6 @@
 // 파일: Diary.java
 // 역할: 일기 엔티티
-// 테이블: diaries
-// 설명: 사용자가 작성한 감정 일기를 저장한다
+// 호출: DiaryService, CalendarService, ReportService -> Diary
 
 package com.mindcompass.api.diary.domain;
 
@@ -12,10 +11,11 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Entity
 @Table(name = "diaries")
@@ -38,22 +38,23 @@ public class Diary {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(nullable = false)
-    private LocalDate diaryDate;  // 일기 날짜 (작성일과 다를 수 있음)
+    @Column(name = "written_at", nullable = false)
+    private LocalDateTime writtenAt;
 
-    // AI 분석 결과 (nullable - AI 실패해도 일기는 저장됨)
     @Column(length = 50)
     private String primaryEmotion;
 
-    private Double emotionScore;
+    @Column(name = "emotion_intensity")
+    private Integer emotionIntensity;
 
-    @Column(length = 500)
-    private String summary;
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
-    private Integer riskScore;
+    @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DiaryAiAnalysis> aiAnalyses = new ArrayList<>();
 
-    @Column(nullable = false)
-    private Boolean isAnalyzed = false;  // AI 분석 완료 여부
+    @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DiaryEmotionTag> emotionTags = new ArrayList<>();
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -64,39 +65,59 @@ public class Diary {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Diary(User user, String title, String content, LocalDate diaryDate) {
+    public Diary(User user, String title, String content, LocalDateTime writtenAt,
+                 String primaryEmotion, Integer emotionIntensity) {
         this.user = user;
         this.title = title;
         this.content = content;
-        this.diaryDate = diaryDate;
-        this.isAnalyzed = false;
-    }
-
-    // 일기 수정
-    public void update(String title, String content, LocalDate diaryDate) {
-        if (title != null) this.title = title;
-        if (content != null) this.content = content;
-        if (diaryDate != null) this.diaryDate = diaryDate;
-
-        // 내용이 수정되면 분석 결과 초기화
-        this.isAnalyzed = false;
-        this.primaryEmotion = null;
-        this.emotionScore = null;
-        this.summary = null;
-        this.riskScore = null;
-    }
-
-    // AI 분석 결과 저장
-    public void applyAnalysis(String primaryEmotion, Double emotionScore,
-                              String summary, Integer riskScore) {
+        this.writtenAt = writtenAt;
         this.primaryEmotion = primaryEmotion;
-        this.emotionScore = emotionScore;
-        this.summary = summary;
-        this.riskScore = riskScore;
-        this.isAnalyzed = true;
+        this.emotionIntensity = emotionIntensity;
     }
 
-    // 소유자 확인
+    public void update(String title, String content, LocalDateTime writtenAt) {
+        if (title != null) {
+            this.title = title;
+        }
+        if (content != null) {
+            this.content = content;
+        }
+        if (writtenAt != null) {
+            this.writtenAt = writtenAt;
+        }
+    }
+
+    public void updateUserEmotion(String primaryEmotion, Integer emotionIntensity) {
+        this.primaryEmotion = primaryEmotion;
+        this.emotionIntensity = emotionIntensity;
+    }
+
+    public void addEmotionTag(DiaryEmotionTag emotionTag) {
+        this.emotionTags.add(emotionTag);
+    }
+
+    public void removeEmotionTagsBySourceType(String sourceType) {
+        this.emotionTags.removeIf(tag -> tag.getSourceType().equals(sourceType));
+    }
+
+    public void addAiAnalysis(DiaryAiAnalysis aiAnalysis) {
+        this.aiAnalyses.add(aiAnalysis);
+    }
+
+    public Optional<DiaryAiAnalysis> getLatestAiAnalysis() {
+        return this.aiAnalyses.stream()
+                .max(Comparator.comparing(DiaryAiAnalysis::getCreatedAt,
+                        Comparator.nullsLast(Comparator.naturalOrder())));
+    }
+
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
+
     public boolean isOwnedBy(Long userId) {
         return this.user.getId().equals(userId);
     }

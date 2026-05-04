@@ -77,7 +77,7 @@ class AuthServiceTest {
         ReflectionTestUtils.setField(authService, "accessTokenValidityMs", 3600000L);
 
         given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.of(user));
-        given(passwordEncoder.matches(request.getPassword(), user.getPassword())).willReturn(true);
+        given(passwordEncoder.matches(request.getPassword(), user.getPasswordHash())).willReturn(true);
         given(jwtTokenProvider.createAccessToken(user.getId(), user.getEmail())).willReturn("accessToken");
         given(jwtTokenProvider.createRefreshToken(user.getId())).willReturn("refreshToken");
 
@@ -109,7 +109,7 @@ class AuthServiceTest {
         LoginRequest request = createLoginRequest();
         User user = createUser();
         given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.of(user));
-        given(passwordEncoder.matches(request.getPassword(), user.getPassword())).willReturn(false);
+        given(passwordEncoder.matches(request.getPassword(), user.getPasswordHash())).willReturn(false);
 
         // when & then
         assertThatThrownBy(() -> authService.login(request))
@@ -121,7 +121,7 @@ class AuthServiceTest {
         SignupRequest request = new SignupRequest();
         ReflectionTestUtils.setField(request, "email", "test@test.com");
         ReflectionTestUtils.setField(request, "password", "password123");
-        ReflectionTestUtils.setField(request, "name", "testName");
+        ReflectionTestUtils.setField(request, "nickname", "testName");
         return request;
     }
 
@@ -135,8 +135,8 @@ class AuthServiceTest {
     private User createUser() {
         User user = User.builder()
                 .email("test@test.com")
-                .password("encodedPassword")
-                .name("testName")
+                .passwordHash("encodedPassword")
+                .nickname("testName")
                 .build();
         ReflectionTestUtils.setField(user, "id", 1L);
         return user;

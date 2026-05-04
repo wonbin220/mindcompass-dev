@@ -93,8 +93,8 @@ class ChatControllerTest {
     @DisplayName("GET /api/v1/chat/sessions/{id} - 채팅 세션 메시지 목록 조회 성공")
     void getSessionMessages_success() throws Exception {
         // given
-        ChatMessageResponse userMessage = createChatMessageResponse(10L, "user", "오늘 너무 불안해요", false, null);
-        ChatMessageResponse assistantMessage = createChatMessageResponse(11L, "assistant", "많이 불안하셨겠어요.", false, null);
+        ChatMessageResponse userMessage = createChatMessageResponse(10L, "user", "오늘 너무 불안해요");
+        ChatMessageResponse assistantMessage = createChatMessageResponse(11L, "assistant", "많이 불안하셨겠어요.");
 
         given(chatService.getSessionMessages(isNull(), eq(1L)))
                 .willReturn(List.of(userMessage, assistantMessage));
@@ -118,9 +118,7 @@ class ChatControllerTest {
         ChatMessageResponse response = createChatMessageResponse(
                 21L,
                 "assistant",
-                "지금 느끼는 감정을 천천히 말해주셔도 괜찮아요.",
-                false,
-                null
+                "지금 느끼는 감정을 천천히 말해주셔도 괜찮아요."
         );
         given(chatService.sendMessage(isNull(), eq(1L), any())).willReturn(response);
 
@@ -137,8 +135,7 @@ class ChatControllerTest {
                 .andExpect(jsonPath("$.message").value("요청이 성공적으로 처리되었습니다"))
                 .andExpect(jsonPath("$.data.id").value(21))
                 .andExpect(jsonPath("$.data.role").value("assistant"))
-                .andExpect(jsonPath("$.data.content").value("지금 느끼는 감정을 천천히 말해주셔도 괜찮아요."))
-                .andExpect(jsonPath("$.data.isSafetyTriggered").value(false));
+                .andExpect(jsonPath("$.data.content").value("지금 느끼는 감정을 천천히 말해주셔도 괜찮아요."));
     }
 
     @Test
@@ -166,19 +163,11 @@ class ChatControllerTest {
                 .build();
     }
 
-    private ChatMessageResponse createChatMessageResponse(
-            Long id,
-            String role,
-            String content,
-            Boolean isSafetyTriggered,
-            String safetyType
-    ) {
+    private ChatMessageResponse createChatMessageResponse(Long id, String role, String content) {
         return ChatMessageResponse.builder()
                 .id(id)
                 .role(role)
                 .content(content)
-                .isSafetyTriggered(isSafetyTriggered)
-                .safetyType(safetyType)
                 .createdAt(LocalDateTime.of(2026, 4, 8, 16, 0))
                 .build();
     }

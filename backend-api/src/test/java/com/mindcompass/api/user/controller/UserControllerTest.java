@@ -59,7 +59,7 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value(userId))
                 .andExpect(jsonPath("$.data.email").value(response.getEmail()))
-                .andExpect(jsonPath("$.data.name").value(response.getName()));
+                .andExpect(jsonPath("$.data.nickname").value(response.getNickname()));
     }
 
     @Test
@@ -68,10 +68,9 @@ class UserControllerTest {
         // given
         Long userId = 1L;
         setupSecurityContext(userId);
-        UpdateProfileRequest request = createUpdateProfileRequest("newName", "newImageUrl");
+        UpdateProfileRequest request = createUpdateProfileRequest("newName");
         UserResponse response = createUserResponse(userId);
-        ReflectionTestUtils.setField(response, "name", "newName");
-        ReflectionTestUtils.setField(response, "profileImageUrl", "newImageUrl");
+        ReflectionTestUtils.setField(response, "nickname", "newName");
 
         given(userService.updateProfile(any(), any(UpdateProfileRequest.class))).willReturn(response);
 
@@ -81,8 +80,7 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.name").value("newName"))
-                .andExpect(jsonPath("$.data.profileImageUrl").value("newImageUrl"))
+                .andExpect(jsonPath("$.data.nickname").value("newName"))
                 .andExpect(jsonPath("$.message").value("프로필이 수정되었습니다"));
     }
 
@@ -111,16 +109,14 @@ class UserControllerTest {
         return UserResponse.builder()
                 .id(userId)
                 .email("test@test.com")
-                .name("testName")
-                .profileImageUrl("imageUrl")
+                .nickname("testName")
                 .createdAt(LocalDateTime.now())
                 .build();
     }
 
-    private UpdateProfileRequest createUpdateProfileRequest(String name, String profileImageUrl) {
+    private UpdateProfileRequest createUpdateProfileRequest(String nickname) {
         UpdateProfileRequest request = new UpdateProfileRequest();
-        ReflectionTestUtils.setField(request, "name", name);
-        ReflectionTestUtils.setField(request, "profileImageUrl", profileImageUrl);
+        ReflectionTestUtils.setField(request, "nickname", nickname);
         return request;
     }
 }

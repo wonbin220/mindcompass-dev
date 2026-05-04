@@ -1,6 +1,6 @@
 // 파일: UpdateProfileRequest.java
 // 역할: 프로필 수정 요청 DTO
-// 화면: 프로필 수정 페이지
+// 호출: UserController -> UserService
 
 package com.mindcompass.api.user.dto.request;
 
@@ -12,8 +12,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UpdateProfileRequest {
 
-    @Size(min = 2, max = 20, message = "이름은 2~20자여야 합니다")
-    private String name;
-
-    private String profileImageUrl;
+    @Size(min = 2, max = 50, message = "닉네임은 2~50자여야 합니다")
+    private String nickname;
 }

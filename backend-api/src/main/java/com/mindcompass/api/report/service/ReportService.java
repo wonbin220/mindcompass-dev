@@ -43,7 +43,8 @@ public class ReportService {
 
         // 일기 조회
         List<Diary> diaries = diaryRepository
-                .findByUserIdAndDiaryDateBetweenOrderByDiaryDateDesc(userId, startDate, endDate);
+                .findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
+                        userId, startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
 
         // 감정 분포 계산
         Map<String, Long> emotionDistribution = diaries.stream()
@@ -58,14 +59,13 @@ public class ReportService {
 
         // 평균 감정 점수
         Double avgScore = diaries.stream()
-                .filter(d -> d.getEmotionScore() != null)
-                .mapToDouble(Diary::getEmotionScore)
+                .filter(d -> d.getEmotionIntensity() != null)
+                .mapToInt(Diary::getEmotionIntensity)
                 .average()
                 .orElse(0.0);
 
-        // 일별 추이 생성
         Map<LocalDate, Diary> diaryMap = diaries.stream()
-                .collect(Collectors.toMap(Diary::getDiaryDate, d -> d, (a, b) -> a));
+                .collect(Collectors.toMap(d -> d.getWrittenAt().toLocalDate(), d -> d, (a, b) -> a));
 
         List<WeeklyReportResponse.DailyEmotionTrend> dailyTrends = new ArrayList<>();
         for (LocalDate d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
@@ -73,7 +73,7 @@ public class ReportService {
             dailyTrends.add(WeeklyReportResponse.DailyEmotionTrend.builder()
                     .date(d)
                     .emotion(diary != null ? diary.getPrimaryEmotion() : null)
-                    .score(diary != null ? diary.getEmotionScore() : null)
+                    .score(diary != null ? toDouble(diary.getEmotionIntensity()) : null)
                     .hasDiary(diary != null)
                     .build());
         }
@@ -104,7 +104,8 @@ public class ReportService {
 
         // 일기 조회
         List<Diary> diaries = diaryRepository
-                .findByUserIdAndDiaryDateBetweenOrderByDiaryDateDesc(userId, startDate, endDate);
+                .findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
+                        userId, startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
 
         // 감정 분포
         Map<String, Long> emotionDistribution = diaries.stream()
@@ -117,8 +118,8 @@ public class ReportService {
                 .orElse(null);
 
         Double avgScore = diaries.stream()
-                .filter(d -> d.getEmotionScore() != null)
-                .mapToDouble(Diary::getEmotionScore)
+                .filter(d -> d.getEmotionIntensity() != null)
+                .mapToInt(Diary::getEmotionIntensity)
                 .average()
                 .orElse(0.0);
 
@@ -147,7 +148,7 @@ public class ReportService {
             List<Diary> diaries, YearMonth yearMonth) {
         // 주 번호별 그룹핑 (1주차 = 1일~7일, 2주차 = 8일~14일, ...)
         Map<Integer, List<Diary>> weeklyGroups = diaries.stream()
-                .collect(Collectors.groupingBy(d -> ((d.getDiaryDate().getDayOfMonth() - 1) / 7) + 1));
+                .collect(Collectors.groupingBy(d -> ((d.getWrittenAt().getDayOfMonth() - 1) / 7) + 1));
 
         List<MonthlyReportResponse.WeeklySummary> summaries = new ArrayList<>();
         int totalWeeks = (yearMonth.lengthOfMonth() + 6) / 7;
@@ -164,8 +165,8 @@ public class ReportService {
                     .orElse(null);
 
             Double avgScore = weekDiaries.stream()
-                    .filter(d -> d.getEmotionScore() != null)
-                    .mapToDouble(Diary::getEmotionScore)
+                    .filter(d -> d.getEmotionIntensity() != null)
+                    .mapToInt(Diary::getEmotionIntensity)
                     .average()
                     .orElse(0.0);
 
@@ -188,11 +189,12 @@ public class ReportService {
         LocalDate lastEnd = lastMonth.atEndOfMonth();
 
         List<Diary> lastMonthDiaries = diaryRepository
-                .findByUserIdAndDiaryDateBetweenOrderByDiaryDateDesc(userId, lastStart, lastEnd);
+                .findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
+                        userId, lastStart.atStartOfDay(), lastEnd.plusDays(1).atStartOfDay());
 
         Double lastAvgScore = lastMonthDiaries.stream()
-                .filter(d -> d.getEmotionScore() != null)
-                .mapToDouble(Diary::getEmotionScore)
+                .filter(d -> d.getEmotionIntensity() != null)
+                .mapToInt(Diary::getEmotionIntensity)
                 .average()
                 .orElse(0.0);
 
@@ -207,5 +209,9 @@ public class ReportService {
                 .diaryCountDiff(countDiff)
                 .trend(trend)
                 .build();
+    }
+
+    private Double toDouble(Integer value) {
+        return value == null ? null : value.doubleValue();
     }
 }

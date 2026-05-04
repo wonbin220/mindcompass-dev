@@ -1,7 +1,6 @@
 // 파일: DiaryQueryRepository.java
-// 역할: 일기 복잡 조회용 QueryRepository
-// 설명: 복잡한 조회 쿼리는 여기서 처리한다 (QueryDSL 또는 JPQL)
-// 예시: 감정별 필터링, 통계 조회 등
+// 역할: 일기 복합 조회 저장소
+// 호출: CalendarService, ReportService -> DiaryQueryRepository
 
 package com.mindcompass.api.diary.repository;
 
@@ -28,8 +27,9 @@ public class DiaryQueryRepository {
         String jpql = """
             SELECT d FROM Diary d
             WHERE d.user.id = :userId
+              AND d.deletedAt IS NULL
               AND d.primaryEmotion = :emotion
-            ORDER BY d.diaryDate DESC
+            ORDER BY d.writtenAt DESC
             """;
 
         return em.createQuery(jpql, Diary.class)
@@ -55,7 +55,11 @@ public class DiaryQueryRepository {
     public List<Diary> findUnanalyzedDiaries(int limit) {
         String jpql = """
             SELECT d FROM Diary d
-            WHERE d.isAnalyzed = false
+            WHERE d.deletedAt IS NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM DiaryAiAnalysis da
+                  WHERE da.diary = d
+              )
             ORDER BY d.createdAt ASC
             """;
 

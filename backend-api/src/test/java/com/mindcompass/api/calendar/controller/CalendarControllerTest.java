@@ -15,6 +15,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -51,7 +52,7 @@ class CalendarControllerTest {
                                 .date(LocalDate.of(year, month, 1))
                                 .diaryId(1L)
                                 .primaryEmotion("기쁨")
-                                .emotionScore(0.9)
+                                .emotionIntensity(5)
                                 .hasDiary(true)
                                 .build(),
                         CalendarDayResponse.empty(LocalDate.of(year, month, 2))
@@ -86,10 +87,9 @@ class CalendarControllerTest {
         DiaryListResponse response = DiaryListResponse.builder()
                 .id(1L)
                 .title("오늘의 일기")
-                .diaryDate(date)
+                .writtenAt(date.atTime(21, 0))
                 .primaryEmotion("기쁨")
-                .emotionScore(0.85)
-                .isAnalyzed(true)
+                .emotionIntensity(4)
                 .build();
 
         given(calendarService.getDiaryByDate(isNull(), eq(date)))
@@ -101,7 +101,7 @@ class CalendarControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(1))
                 .andExpect(jsonPath("$.data.title").value("오늘의 일기"))
-                .andExpect(jsonPath("$.data.diaryDate").value("2026-04-08"))
+                .andExpect(jsonPath("$.data.writtenAt").value("2026-04-08T21:00:00"))
                 .andExpect(jsonPath("$.data.primaryEmotion").value("기쁨"));
     }
 
@@ -114,10 +114,9 @@ class CalendarControllerTest {
         DiaryListResponse item = DiaryListResponse.builder()
                 .id(1L)
                 .title("기쁜 일기")
-                .diaryDate(LocalDate.of(2026, 4, 8))
+                .writtenAt(LocalDateTime.of(2026, 4, 8, 21, 0))
                 .primaryEmotion(emotion)
-                .emotionScore(0.95)
-                .isAnalyzed(true)
+                .emotionIntensity(5)
                 .build();
 
         given(calendarService.getDiariesByEmotion(isNull(), eq(emotion), eq(limit)))

@@ -44,7 +44,7 @@ class UserServiceTest {
         // then
         assertThat(response.getId()).isEqualTo(userId);
         assertThat(response.getEmail()).isEqualTo(user.getEmail());
-        assertThat(response.getName()).isEqualTo(user.getName());
+        assertThat(response.getNickname()).isEqualTo(user.getNickname());
     }
 
     @Test
@@ -66,15 +66,14 @@ class UserServiceTest {
         // given
         Long userId = 1L;
         User user = createUser(userId);
-        UpdateProfileRequest request = createUpdateProfileRequest("newName", "newImageUrl");
+        UpdateProfileRequest request = createUpdateProfileRequest("newName");
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
 
         // when
         UserResponse response = userService.updateProfile(userId, request);
 
         // then
-        assertThat(response.getName()).isEqualTo("newName");
-        assertThat(response.getProfileImageUrl()).isEqualTo("newImageUrl");
+        assertThat(response.getNickname()).isEqualTo("newName");
     }
 
     @Test
@@ -95,18 +94,17 @@ class UserServiceTest {
     private User createUser(Long userId) {
         User user = User.builder()
                 .email("test@test.com")
-                .password("password123")
-                .name("testName")
+                .passwordHash("password123")
+                .nickname("testName")
                 .build();
         ReflectionTestUtils.setField(user, "id", userId);
         ReflectionTestUtils.setField(user, "createdAt", LocalDateTime.now());
         return user;
     }
 
-    private UpdateProfileRequest createUpdateProfileRequest(String name, String profileImageUrl) {
+    private UpdateProfileRequest createUpdateProfileRequest(String nickname) {
         UpdateProfileRequest request = new UpdateProfileRequest();
-        ReflectionTestUtils.setField(request, "name", name);
-        ReflectionTestUtils.setField(request, "profileImageUrl", profileImageUrl);
+        ReflectionTestUtils.setField(request, "nickname", nickname);
         return request;
     }
 }

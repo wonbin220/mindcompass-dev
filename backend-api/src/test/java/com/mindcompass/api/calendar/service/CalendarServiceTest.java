@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,11 +45,12 @@ class CalendarServiceTest {
         LocalDate startDate = LocalDate.of(2026, 4, 1);
         LocalDate endDate = LocalDate.of(2026, 4, 30);
 
-        Diary happyDiary = createDiary(1L, LocalDate.of(2026, 4, 8), "기쁨", 0.91);
-        Diary calmDiary = createDiary(2L, LocalDate.of(2026, 4, 3), "평온", 0.72);
-        Diary anotherHappyDiary = createDiary(3L, LocalDate.of(2026, 4, 1), "기쁨", 0.65);
+        Diary happyDiary = createDiary(1L, LocalDate.of(2026, 4, 8), "기쁨", 5);
+        Diary calmDiary = createDiary(2L, LocalDate.of(2026, 4, 3), "평온", 4);
+        Diary anotherHappyDiary = createDiary(3L, LocalDate.of(2026, 4, 1), "기쁨", 3);
 
-        given(diaryRepository.findByUserIdAndDiaryDateBetweenOrderByDiaryDateDesc(userId, startDate, endDate))
+        given(diaryRepository.findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
+                userId, startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay()))
                 .willReturn(List.of(happyDiary, calmDiary, anotherHappyDiary));
 
         // when
@@ -68,7 +70,7 @@ class CalendarServiceTest {
                     assertThat(day.getHasDiary()).isTrue();
                     assertThat(day.getDiaryId()).isEqualTo(1L);
                     assertThat(day.getPrimaryEmotion()).isEqualTo("기쁨");
-                    assertThat(day.getEmotionScore()).isEqualTo(0.91);
+                    assertThat(day.getEmotionIntensity()).isEqualTo(5);
                 });
 
         assertThat(response.getDays())
@@ -78,7 +80,7 @@ class CalendarServiceTest {
                     assertThat(day.getHasDiary()).isFalse();
                     assertThat(day.getDiaryId()).isNull();
                     assertThat(day.getPrimaryEmotion()).isNull();
-                    assertThat(day.getEmotionScore()).isNull();
+                    assertThat(day.getEmotionIntensity()).isNull();
                 });
     }
 
@@ -92,7 +94,8 @@ class CalendarServiceTest {
         LocalDate startDate = LocalDate.of(2026, 2, 1);
         LocalDate endDate = LocalDate.of(2026, 2, 28);
 
-        given(diaryRepository.findByUserIdAndDiaryDateBetweenOrderByDiaryDateDesc(userId, startDate, endDate))
+        given(diaryRepository.findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
+                userId, startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay()))
                 .willReturn(List.of());
 
         // when
@@ -113,9 +116,10 @@ class CalendarServiceTest {
         // given
         Long userId = 1L;
         LocalDate date = LocalDate.of(2026, 4, 8);
-        Diary diary = createDiary(1L, date, "기쁨", 0.88);
+        Diary diary = createDiary(1L, date, "기쁨", 4);
 
-        given(diaryRepository.findByUserIdAndDiaryDate(userId, date))
+        given(diaryRepository.findFirstByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtAsc(
+                userId, date.atStartOfDay(), date.plusDays(1).atStartOfDay()))
                 .willReturn(Optional.of(diary));
 
         // when
@@ -125,10 +129,9 @@ class CalendarServiceTest {
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getTitle()).isEqualTo("테스트 일기 1");
-        assertThat(response.getDiaryDate()).isEqualTo(date);
+        assertThat(response.getWrittenAt()).isEqualTo(date.atTime(21, 0));
         assertThat(response.getPrimaryEmotion()).isEqualTo("기쁨");
-        assertThat(response.getEmotionScore()).isEqualTo(0.88);
-        assertThat(response.getIsAnalyzed()).isTrue();
+        assertThat(response.getEmotionIntensity()).isEqualTo(4);
     }
 
     @Test
@@ -138,7 +141,8 @@ class CalendarServiceTest {
         Long userId = 1L;
         LocalDate date = LocalDate.of(2026, 4, 9);
 
-        given(diaryRepository.findByUserIdAndDiaryDate(userId, date))
+        given(diaryRepository.findFirstByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtAsc(
+                userId, date.atStartOfDay(), date.plusDays(1).atStartOfDay()))
                 .willReturn(Optional.empty());
 
         // when
@@ -156,8 +160,8 @@ class CalendarServiceTest {
         String emotion = "기쁨";
         int limit = 20;
 
-        Diary firstDiary = createDiary(1L, LocalDate.of(2026, 4, 8), emotion, 0.91);
-        Diary secondDiary = createDiary(2L, LocalDate.of(2026, 4, 6), emotion, 0.74);
+        Diary firstDiary = createDiary(1L, LocalDate.of(2026, 4, 8), emotion, 5);
+        Diary secondDiary = createDiary(2L, LocalDate.of(2026, 4, 6), emotion, 3);
 
         given(diaryQueryRepository.findByUserIdAndEmotion(userId, emotion, limit))
                 .willReturn(List.of(firstDiary, secondDiary));
@@ -170,7 +174,7 @@ class CalendarServiceTest {
         assertThat(response.get(0).getId()).isEqualTo(1L);
         assertThat(response.get(0).getPrimaryEmotion()).isEqualTo("기쁨");
         assertThat(response.get(1).getId()).isEqualTo(2L);
-        assertThat(response.get(1).getDiaryDate()).isEqualTo(LocalDate.of(2026, 4, 6));
+        assertThat(response.get(1).getWrittenAt()).isEqualTo(LocalDate.of(2026, 4, 6).atTime(21, 0));
     }
 
     @Test
@@ -191,11 +195,11 @@ class CalendarServiceTest {
         assertThat(response).isEmpty();
     }
 
-    private Diary createDiary(Long diaryId, LocalDate diaryDate, String primaryEmotion, Double emotionScore) {
+    private Diary createDiary(Long diaryId, LocalDate diaryDate, String primaryEmotion, Integer emotionIntensity) {
         User user = User.builder()
                 .email("test@test.com")
-                .password("encodedPassword")
-                .name("테스트 사용자")
+                .passwordHash("encodedPassword")
+                .nickname("테스트 사용자")
                 .build();
         ReflectionTestUtils.setField(user, "id", 1L);
 
@@ -203,13 +207,12 @@ class CalendarServiceTest {
                 .user(user)
                 .title("테스트 일기 " + diaryId)
                 .content("테스트 내용 " + diaryId)
-                .diaryDate(diaryDate)
+                .writtenAt(LocalDateTime.of(diaryDate.getYear(), diaryDate.getMonth(), diaryDate.getDayOfMonth(), 21, 0))
                 .build();
 
         ReflectionTestUtils.setField(diary, "id", diaryId);
         ReflectionTestUtils.setField(diary, "primaryEmotion", primaryEmotion);
-        ReflectionTestUtils.setField(diary, "emotionScore", emotionScore);
-        ReflectionTestUtils.setField(diary, "isAnalyzed", true);
+        ReflectionTestUtils.setField(diary, "emotionIntensity", emotionIntensity);
 
         return diary;
     }

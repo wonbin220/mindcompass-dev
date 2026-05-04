@@ -1,7 +1,6 @@
 // 파일: User.java
 // 역할: 사용자 엔티티
-// 테이블: users
-// 설명: 서비스의 모든 사용자 정보를 저장한다
+// 호출: AuthService, UserService -> User
 
 package com.mindcompass.api.user.domain;
 
@@ -27,18 +26,18 @@ public class User {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(nullable = false)
-    private String password;
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
 
     @Column(nullable = false, length = 50)
-    private String name;
-
-    @Column(length = 500)
-    private String profileImageUrl;
+    private String nickname;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserStatus status = UserStatus.ACTIVE;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -49,26 +48,28 @@ public class User {
     private LocalDateTime updatedAt;
 
     @Builder
-    public User(String email, String password, String name) {
+    public User(String email, String passwordHash, String nickname) {
         this.email = email;
-        this.password = password;
-        this.name = name;
+        this.passwordHash = passwordHash;
+        this.nickname = nickname;
         this.status = UserStatus.ACTIVE;
     }
 
     // 프로필 업데이트
-    public void updateProfile(String name, String profileImageUrl) {
-        if (name != null) this.name = name;
-        if (profileImageUrl != null) this.profileImageUrl = profileImageUrl;
+    public void updateProfile(String nickname) {
+        if (nickname != null) {
+            this.nickname = nickname;
+        }
     }
 
     // 비밀번호 변경
     public void changePassword(String encodedPassword) {
-        this.password = encodedPassword;
+        this.passwordHash = encodedPassword;
     }
 
     // 계정 비활성화
     public void deactivate() {
         this.status = UserStatus.INACTIVE;
+        this.deletedAt = LocalDateTime.now();
     }
 }

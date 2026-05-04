@@ -1,6 +1,6 @@
 // 파일: ChatMessageResponse.java
 // 역할: 채팅 메시지 응답 DTO
-// 화면: 채팅 화면
+// 호출: ChatService -> ChatController
 
 package com.mindcompass.api.chat.dto.response;
 
@@ -17,8 +17,6 @@ public class ChatMessageResponse {
     private final Long id;
     private final String role;
     private final String content;
-    private final Boolean isSafetyTriggered;
-    private final String safetyType;
     private final LocalDateTime createdAt;
 
     public static ChatMessageResponse from(ChatMessage message) {
@@ -26,8 +24,6 @@ public class ChatMessageResponse {
                 .id(message.getId())
                 .role(message.getRole().name().toLowerCase())
                 .content(message.getContent())
-                .isSafetyTriggered(message.getIsSafetyTriggered())
-                .safetyType(message.getSafetyType())
                 .createdAt(message.getCreatedAt())
                 .build();
     }

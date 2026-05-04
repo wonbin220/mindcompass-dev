@@ -37,7 +37,7 @@ public class UserService {
     @Transactional
     public UserResponse updateProfile(Long userId, UpdateProfileRequest request) {
         User user = findUserById(userId);
-        user.updateProfile(request.getName(), request.getProfileImageUrl());
+        user.updateProfile(request.getNickname());
 
         log.info("프로필 수정 완료: userId={}", userId);
         return UserResponse.from(user);

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,11 +40,12 @@ public class CalendarService {
 
         // 해당 월의 일기 목록 조회
         List<Diary> diaries = diaryRepository
-                .findByUserIdAndDiaryDateBetweenOrderByDiaryDateDesc(userId, startDate, endDate);
+                .findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
+                        userId, startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
 
         // 날짜별 일기 매핑
         Map<LocalDate, Diary> diaryMap = diaries.stream()
-                .collect(Collectors.toMap(Diary::getDiaryDate, d -> d, (a, b) -> a));
+                .collect(Collectors.toMap(d -> d.getWrittenAt().toLocalDate(), d -> d, (a, b) -> a));
 
         // 캘린더 데이 생성
         List<CalendarDayResponse> days = new ArrayList<>();
@@ -56,7 +58,7 @@ public class CalendarService {
                         date,
                         diary.getId(),
                         diary.getPrimaryEmotion(),
-                        diary.getEmotionScore()
+                        diary.getEmotionIntensity()
                 ));
             } else {
                 days.add(CalendarDayResponse.empty(date));
@@ -75,7 +77,11 @@ public class CalendarService {
      * 특정 날짜의 일기 조회
      */
     public DiaryListResponse getDiaryByDate(Long userId, LocalDate date) {
-        return diaryRepository.findByUserIdAndDiaryDate(userId, date)
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.plusDays(1).atStartOfDay();
+
+        return diaryRepository.findFirstByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtAsc(
+                        userId, start, end)
                 .map(DiaryListResponse::from)
                 .orElse(null);
     }

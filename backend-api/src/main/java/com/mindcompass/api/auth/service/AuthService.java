@@ -45,8 +45,8 @@ public class AuthService {
         // 비밀번호 암호화 후 저장
         User user = User.builder()
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .name(request.getName())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .nickname(request.getNickname())
                 .build();
 
         userRepository.save(user);
@@ -62,7 +62,7 @@ public class AuthService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 비밀번호 확인
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new BusinessException(ErrorCode.INVALID_PASSWORD);
         }
 

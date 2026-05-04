@@ -1,6 +1,6 @@
 // 파일: ChatSessionResponse.java
 // 역할: 채팅 세션 응답 DTO
-// 화면: 채팅 목록, 채팅 상세
+// 호출: ChatService -> ChatController
 
 package com.mindcompass.api.chat.dto.response;
 
@@ -16,6 +16,7 @@ public class ChatSessionResponse {
 
     private final Long id;
     private final String title;
+    private final Long sourceDiaryId;
     private final String status;
     private final int messageCount;
     private final LocalDateTime createdAt;
@@ -25,6 +26,7 @@ public class ChatSessionResponse {
         return ChatSessionResponse.builder()
                 .id(session.getId())
                 .title(session.getTitle())
+                .sourceDiaryId(session.getSourceDiaryId())
                 .status(session.getStatus().name())
                 .messageCount(session.getMessages().size())
                 .createdAt(session.getCreatedAt())

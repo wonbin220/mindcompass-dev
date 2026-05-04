@@ -6,6 +6,8 @@ import com.mindcompass.api.diary.domain.Diary;
 import com.mindcompass.api.diary.dto.request.CreateDiaryRequest;
 import com.mindcompass.api.diary.dto.request.UpdateDiaryRequest;
 import com.mindcompass.api.diary.dto.response.DiaryResponse;
+import com.mindcompass.api.diary.repository.DiaryAiAnalysisRepository;
+import com.mindcompass.api.diary.repository.DiaryEmotionTagRepository;
 import com.mindcompass.api.diary.repository.DiaryRepository;
 import com.mindcompass.api.infra.ai.AiDiaryAnalysisClient;
 import com.mindcompass.api.infra.ai.dto.DiaryAnalysisRequest;
@@ -20,7 +22,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +40,12 @@ class DiaryServiceTest {
 
     @Mock
     private DiaryRepository diaryRepository;
+
+    @Mock
+    private DiaryAiAnalysisRepository diaryAiAnalysisRepository;
+
+    @Mock
+    private DiaryEmotionTagRepository diaryEmotionTagRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -183,7 +192,7 @@ class DiaryServiceTest {
         diaryService.deleteDiary(userId, diaryId);
 
         // then
-        verify(diaryRepository).delete(diary);
+        assertThat(diary.getDeletedAt()).isNotNull();
     }
 
     @Test
@@ -228,8 +237,8 @@ class DiaryServiceTest {
     private User createUser() {
         User user = User.builder()
                 .email("test@test.com")
-                .password("encodedPassword")
-                .name("testName")
+                .passwordHash("encodedPassword")
+                .nickname("testName")
                 .build();
         ReflectionTestUtils.setField(user, "id", 1L);
         return user;
@@ -240,7 +249,7 @@ class DiaryServiceTest {
                 .user(user)
                 .title("오늘의 일기")
                 .content("오늘은 좋은 하루였다")
-                .diaryDate(LocalDate.of(2026, 4, 8))
+                .writtenAt(LocalDateTime.of(2026, 4, 8, 21, 0))
                 .build();
         ReflectionTestUtils.setField(diary, "id", 1L);
         return diary;
@@ -250,7 +259,7 @@ class DiaryServiceTest {
         CreateDiaryRequest request = new CreateDiaryRequest();
         ReflectionTestUtils.setField(request, "title", "오늘의 일기");
         ReflectionTestUtils.setField(request, "content", "오늘은 좋은 하루였다");
-        ReflectionTestUtils.setField(request, "diaryDate", LocalDate.of(2026, 4, 8));
+        ReflectionTestUtils.setField(request, "writtenAt", LocalDateTime.of(2026, 4, 8, 21, 0));
         return request;
     }
 
@@ -258,16 +267,16 @@ class DiaryServiceTest {
         UpdateDiaryRequest request = new UpdateDiaryRequest();
         ReflectionTestUtils.setField(request, "title", "수정된 제목");
         ReflectionTestUtils.setField(request, "content", "수정된 내용");
-        ReflectionTestUtils.setField(request, "diaryDate", LocalDate.of(2026, 4, 8));
+        ReflectionTestUtils.setField(request, "writtenAt", LocalDateTime.of(2026, 4, 8, 22, 0));
         return request;
     }
 
     private DiaryAnalysisResponse createAnalysisResponse() {
         DiaryAnalysisResponse response = new DiaryAnalysisResponse();
         ReflectionTestUtils.setField(response, "primaryEmotion", "기쁨");
-        ReflectionTestUtils.setField(response, "emotionScore", 0.85);
+        ReflectionTestUtils.setField(response, "emotionIntensity", 4);
         ReflectionTestUtils.setField(response, "summary", "좋은 하루를 보냈다");
-        ReflectionTestUtils.setField(response, "riskScore", 5);
+        ReflectionTestUtils.setField(response, "riskScore", BigDecimal.valueOf(5));
         return response;
     }
 }

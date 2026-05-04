@@ -18,7 +18,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -53,7 +52,7 @@ class DiaryControllerTest {
                 .willReturn(response);
 
         String requestJson = """
-                {"title":"오늘의 일기","content":"오늘은 좋은 하루였다","diaryDate":"2026-04-08"}
+                {"title":"오늘의 일기","content":"오늘은 좋은 하루였다","writtenAt":"2026-04-08T21:00:00"}
                 """;
 
         // when & then
@@ -66,8 +65,7 @@ class DiaryControllerTest {
                 .andExpect(jsonPath("$.data.id").value(1))
                 .andExpect(jsonPath("$.data.title").value("오늘의 일기"))
                 .andExpect(jsonPath("$.data.content").value("오늘은 좋은 하루였다"))
-                .andExpect(jsonPath("$.data.primaryEmotion").value("기쁨"))
-                .andExpect(jsonPath("$.data.isAnalyzed").value(true));
+                .andExpect(jsonPath("$.data.primaryEmotion").value("기쁨"));
     }
 
     @Test
@@ -85,7 +83,7 @@ class DiaryControllerTest {
                 .andExpect(jsonPath("$.data.id").value(1))
                 .andExpect(jsonPath("$.data.title").value("오늘의 일기"))
                 .andExpect(jsonPath("$.data.content").value("오늘은 좋은 하루였다"))
-                .andExpect(jsonPath("$.data.diaryDate").value("2026-04-08"))
+                .andExpect(jsonPath("$.data.writtenAt").value("2026-04-08T21:00:00"))
                 .andExpect(jsonPath("$.data.primaryEmotion").value("기쁨"));
     }
 
@@ -124,12 +122,9 @@ class DiaryControllerTest {
                 .id(1L)
                 .title("수정된 일기")
                 .content("수정된 내용")
-                .diaryDate(LocalDate.of(2026, 4, 8))
+                .writtenAt(LocalDateTime.of(2026, 4, 8, 22, 0))
                 .primaryEmotion("기쁨")
-                .emotionScore(0.85)
-                .summary("좋은 하루를 보냄")
-                .riskScore(0)
-                .isAnalyzed(true)
+                .emotionIntensity(4)
                 .createdAt(LocalDateTime.of(2026, 4, 8, 10, 0))
                 .updatedAt(LocalDateTime.of(2026, 4, 8, 10, 0))
                 .build();
@@ -138,7 +133,7 @@ class DiaryControllerTest {
                 .willReturn(response);
 
         String requestJson = """
-                {"title":"수정된 일기","content":"수정된 내용","diaryDate":"2026-04-08"}
+                {"title":"수정된 일기","content":"수정된 내용","writtenAt":"2026-04-08T22:00:00"}
                 """;
 
         // when & then
@@ -179,8 +174,7 @@ class DiaryControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("분석이 요청되었습니다"))
                 .andExpect(jsonPath("$.data.id").value(1))
-                .andExpect(jsonPath("$.data.primaryEmotion").value("기쁨"))
-                .andExpect(jsonPath("$.data.isAnalyzed").value(true));
+                .andExpect(jsonPath("$.data.primaryEmotion").value("기쁨"));
     }
 
     // -- 테스트 데이터 생성 헬퍼 --
@@ -190,12 +184,9 @@ class DiaryControllerTest {
                 .id(id)
                 .title("오늘의 일기")
                 .content("오늘은 좋은 하루였다")
-                .diaryDate(LocalDate.of(2026, 4, 8))
+                .writtenAt(LocalDateTime.of(2026, 4, 8, 21, 0))
                 .primaryEmotion("기쁨")
-                .emotionScore(0.85)
-                .summary("좋은 하루를 보냄")
-                .riskScore(0)
-                .isAnalyzed(true)
+                .emotionIntensity(4)
                 .createdAt(LocalDateTime.of(2026, 4, 8, 10, 0))
                 .updatedAt(LocalDateTime.of(2026, 4, 8, 10, 0))
                 .build();
@@ -205,10 +196,9 @@ class DiaryControllerTest {
         return DiaryListResponse.builder()
                 .id(id)
                 .title(title)
-                .diaryDate(LocalDate.of(2026, 4, 8))
+                .writtenAt(LocalDateTime.of(2026, 4, 8, 21, 0))
                 .primaryEmotion("기쁨")
-                .emotionScore(0.85)
-                .isAnalyzed(true)
+                .emotionIntensity(4)
                 .build();
     }
 }

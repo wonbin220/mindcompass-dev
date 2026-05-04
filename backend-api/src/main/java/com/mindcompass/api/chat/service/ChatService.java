@@ -57,6 +57,7 @@ public class ChatService {
 
         ChatSession session = ChatSession.builder()
                 .user(user)
+                .sourceDiaryId(null)
                 .build();
 
         session = sessionRepository.save(session);
@@ -122,9 +123,7 @@ public class ChatService {
 
             assistantMessage = ChatMessage.assistantMessage(
                     session,
-                    safetyMessage,
-                    true,
-                    safetyResult.getRiskLevel()
+                    safetyMessage
             );
             log.warn("위기 상황 감지: sessionId={}, riskLevel={}",
                     sessionId, safetyResult.getRiskLevel());
@@ -136,7 +135,7 @@ public class ChatService {
         // 4. AI 응답 저장
         messageRepository.save(assistantMessage);
         log.info("AI 응답 저장: sessionId={}, isSafety={}",
-                sessionId, assistantMessage.getIsSafetyTriggered());
+                sessionId, safetyResult.getIsRisky());
 
         return ChatMessageResponse.from(assistantMessage);
     }
@@ -198,14 +197,12 @@ public class ChatService {
 
             return ChatMessage.assistantMessage(
                     session,
-                    response.getMessage() != null ? response.getMessage() : DEFAULT_FALLBACK_MESSAGE,
-                    response.getIsSafetyTriggered(),
-                    response.getSafetyType()
+                    response.getMessage() != null ? response.getMessage() : DEFAULT_FALLBACK_MESSAGE
             );
 
         } catch (Exception e) {
             log.warn("AI 응답 생성 실패, fallback 사용: {}", e.getMessage());
-            return ChatMessage.assistantMessage(session, DEFAULT_FALLBACK_MESSAGE, false, null);
+            return ChatMessage.assistantMessage(session, DEFAULT_FALLBACK_MESSAGE);
         }
     }
 

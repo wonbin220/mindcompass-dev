@@ -92,8 +92,6 @@ class ChatServiceTest {
         ChatMessage previousAssistantMessage = createMessage(10L, session, MessageRole.ASSISTANT, "어떤 일이 있었는지 말씀해 주세요", false, null);
         ChatResponse aiResponse = ChatResponse.builder()
                 .message("많이 불안하셨겠어요. 천천히 이야기해 볼까요?")
-                .isSafetyTriggered(false)
-                .safetyType(null)
                 .build();
         AtomicLong messageIdSequence = new AtomicLong(1000L);
 
@@ -118,7 +116,6 @@ class ChatServiceTest {
         // then
         assertThat(response.getRole()).isEqualTo("assistant");
         assertThat(response.getContent()).isEqualTo("많이 불안하셨겠어요. 천천히 이야기해 볼까요?");
-        assertThat(response.getIsSafetyTriggered()).isFalse();
         assertThat(session.getTitle()).isEqualTo("오늘 하루가 너무 불안했어요");
 
         ArgumentCaptor<ChatRequest> chatRequestCaptor = ArgumentCaptor.forClass(ChatRequest.class);
@@ -162,8 +159,6 @@ class ChatServiceTest {
         // then
         assertThat(response.getRole()).isEqualTo("assistant");
         assertThat(response.getContent()).isEqualTo("지금은 혼자 계시지 말고 1393에 바로 연락해 주세요.");
-        assertThat(response.getIsSafetyTriggered()).isTrue();
-        assertThat(response.getSafetyType()).isEqualTo("CRITICAL");
         verify(aiChatClient, never()).generateReply(any(ChatRequest.class));
     }
 
@@ -199,8 +194,6 @@ class ChatServiceTest {
         // then
         assertThat(response.getRole()).isEqualTo("assistant");
         assertThat(response.getContent()).isEqualTo("죄송합니다, 지금은 응답을 드리기 어려워요. 잠시 후 다시 시도해 주세요.");
-        assertThat(response.getIsSafetyTriggered()).isFalse();
-        assertThat(response.getSafetyType()).isNull();
         verify(aiChatClient).generateReply(any(ChatRequest.class));
     }
 
@@ -225,8 +218,8 @@ class ChatServiceTest {
     private User createUser(Long userId) {
         User user = User.builder()
                 .email("test@test.com")
-                .password("encodedPassword")
-                .name("테스트 사용자")
+                .passwordHash("encodedPassword")
+                .nickname("테스트 사용자")
                 .build();
         ReflectionTestUtils.setField(user, "id", userId);
         return user;
@@ -247,8 +240,6 @@ class ChatServiceTest {
                 .session(session)
                 .role(role)
                 .content(content)
-                .isSafetyTriggered(isSafetyTriggered)
-                .safetyType(safetyType)
                 .build();
         ReflectionTestUtils.setField(message, "id", id);
         ReflectionTestUtils.setField(message, "createdAt", LocalDateTime.of(2026, 4, 8, 16, 55));

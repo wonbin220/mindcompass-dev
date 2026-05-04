@@ -1,6 +1,6 @@
 // 파일: SignupRequest.java
 // 역할: 회원가입 요청 DTO
-// 화면: 회원가입 페이지
+// 호출: AuthController -> AuthService
 
 package com.mindcompass.api.auth.dto.request;
 
@@ -22,7 +22,7 @@ public class SignupRequest {
     @Size(min = 8, max = 20, message = "비밀번호는 8~20자여야 합니다")
     private String password;
 
-    @NotBlank(message = "이름은 필수입니다")
-    @Size(min = 2, max = 20, message = "이름은 2~20자여야 합니다")
-    private String name;
+    @NotBlank(message = "닉네임은 필수입니다")
+    @Size(min = 2, max = 50, message = "닉네임은 2~50자여야 합니다")
+    private String nickname;
 }

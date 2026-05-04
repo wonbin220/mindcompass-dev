@@ -1,0 +1,26 @@
+/* 파일: globals.css
+   역할: 전역 스타일 및 Mind Compass 색상 테마 정의 */
+@import "tailwindcss";
+
+@theme inline {
+  /* Mind Compass 기본 색상 */
+  --color-primary: #4A8EF0;
+  --color-background: #F8FAFC;
+  --color-card: #FFFFFF;
+
+  /* 감정 색상 */
+  --color-emotion-anxiety: #F472B6;
+  --color-emotion-worry: #60A5FA;
+  --color-emotion-calm: #34D399;
+  --color-emotion-joy: #FBBF24;
+  --color-emotion-fatigue: #9CA3AF;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background-color: #F8FAFC;
+  color: #171717;
+  font-family: Arial, Helvetica, sans-serif;
+}

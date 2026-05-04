@@ -74,7 +74,7 @@ class AuthControllerTest {
         SignupRequest request = new SignupRequest();
         ReflectionTestUtils.setField(request, "email", "test@test.com");
         ReflectionTestUtils.setField(request, "password", "password123");
-        ReflectionTestUtils.setField(request, "name", "testName");
+        ReflectionTestUtils.setField(request, "nickname", "testName");
         return request;
     }
 
