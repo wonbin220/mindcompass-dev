@@ -1,79 +1,133 @@
 "use client";
 // 파일: app/signup/page.tsx
 // 역할: 회원가입 페이지 (인증 없이 접근 가능)
-// 호출: POST /auth/signup → backend-api
+// 호출: POST /api/v1/auth/signup → backend-api
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { api } from "@/lib/api";
 
 export default function SignupPage() {
+  const router = useRouter();
+  const [nickname, setNickname] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorMessage("");
+
+    if (password !== confirmPassword) {
+      setErrorMessage("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      await api.post(
+          "/api/v1/auth/signup",
+          { email, password, nickname },
+          { skipAuth: true }
+      );
+      router.push("/login");
+    } catch {
+      setErrorMessage("이미 사용 중인 이메일입니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-[#4A8EF0]">Mind Compass</h1>
-          <p className="text-gray-400 text-sm mt-1">감정나침반</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+        <Card className="w-full max-w-sm shadow-sm">
+          <CardHeader className="text-center pb-2">
+            <h1 className="text-2xl font-bold text-[#4A8EF0]">Mind Compass</h1>
+            <p className="text-gray-400 text-sm">감정나침반</p>
+            <h2 className="text-xl font-semibold text-gray-800 pt-2">회원가입</h2>
+          </CardHeader>
 
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">회원가입</h2>
+          <CardContent>
+            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="nickname">닉네임</Label>
+                <Input
+                    id="nickname"
+                    type="text"
+                    placeholder="닉네임을 입력하세요 (2~50자)"
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    minLength={2}
+                    maxLength={50}
+                    required
+                />
+              </div>
 
-        <form className="flex flex-col gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              이름
-            </label>
-            <input
-              type="text"
-              placeholder="이름을 입력하세요"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#4A8EF0]"
-            />
-          </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="email">이메일</Label>
+                <Input
+                    id="email"
+                    type="email"
+                    placeholder="이메일을 입력하세요"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="password">비밀번호</Label>
+                <Input
+                    id="password"
+                    type="password"
+                    placeholder="8~20자로 입력하세요"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    minLength={8}
+                    maxLength={20}
+                    required
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              이메일
-            </label>
-            <input
-              type="email"
-              placeholder="이메일을 입력하세요"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#4A8EF0]"
-            />
-          </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="confirmPassword">비밀번호 확인</Label>
+                <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="비밀번호를 다시 입력하세요"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              비밀번호
-            </label>
-            <input
-              type="password"
-              placeholder="비밀번호를 입력하세요"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#4A8EF0]"
-            />
-          </div>
+              {errorMessage && (
+                  <p className="text-red-500 text-sm">{errorMessage}</p>
+              )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              비밀번호 확인
-            </label>
-            <input
-              type="password"
-              placeholder="비밀번호를 다시 입력하세요"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#4A8EF0]"
-            />
-          </div>
+              <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-[#4A8EF0] hover:bg-[#3a7ee0]"
+              >
+                {isLoading ? "가입 중..." : "가입하기"}
+              </Button>
+            </form>
 
-          <button
-            type="submit"
-            className="w-full py-3 bg-[#4A8EF0] text-white font-medium rounded-lg hover:bg-[#3a7ee0] transition-colors mt-2"
-          >
-            가입하기
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-gray-500 mt-6">
-          이미 계정이 있으신가요?{" "}
-          <a href="/login" className="text-[#4A8EF0] font-medium">
-            로그인
-          </a>
-        </p>
+            <p className="text-center text-sm text-gray-500 mt-6">
+              이미 계정이 있으신가요?{" "}
+              <a href="/login" className="text-[#4A8EF0] font-medium">
+                로그인
+              </a>
+            </p>
+          </CardContent>
+        </Card>
       </div>
-    </div>
   );
 }

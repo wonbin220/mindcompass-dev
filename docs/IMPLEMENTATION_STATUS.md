@@ -258,6 +258,40 @@ Phase 7: Safety Net (ai-api 내부 구조 학습)
 ## Session Handoff - 2026-04-08 17:03
 
 ### 완료
+
+## Session Handoff - 2026-05-04 15:40
+
+### 완료
+- backend-api의 User, Diary, Chat 엔티티를 신규 ERD에 맞게 갱신
+- DiaryAiAnalysis, DiaryEmotionTag, RefreshToken, UserSettings, SafetyEvent, AiAuditLog 엔티티 추가
+- Diary/User/Auth 관련 DTO와 서비스 참조를 신규 필드명으로 정리
+- Flyway 마이그레이션 `V004`~`V009` 추가
+- 주요 테스트 코드에서 `nickname`, `writtenAt`, `emotionIntensity` 기준으로 참조명 갱신
+
+### 진행중
+- 없음
+
+### 다음 작업
+- 네트워크/인터페이스 제약이 없는 환경에서 `backend-api ./gradlew compileJava` 재실행
+- 필요하면 이어서 `./gradlew test`로 테스트 소스 정합성 추가 검증
+
+### 블로커
+- 현재 Codex 샌드박스에서는 Gradle이 파일 락 리스너 초기화 중 네트워크 인터페이스 정보를 얻지 못해 `compileJava`가 시작 단계에서 실패함
+
+### 변경된 파일
+- backend-api/src/main/java/com/mindcompass/api/user/domain/User.java
+- backend-api/src/main/java/com/mindcompass/api/diary/domain/* (신규/수정)
+- backend-api/src/main/java/com/mindcompass/api/chat/domain/* (수정)
+- backend-api/src/main/java/com/mindcompass/api/auth/domain/RefreshToken.java (신규)
+- backend-api/src/main/java/com/mindcompass/api/user/domain/UserSettings.java (신규)
+- backend-api/src/main/java/com/mindcompass/api/safety/domain/SafetyEvent.java (신규)
+- backend-api/src/main/java/com/mindcompass/api/infra/ai/domain/AiAuditLog.java (신규)
+- backend-api/src/main/resources/db/migration/V004__*.sql ~ V009__*.sql (신규)
+- backend-api/src/test/java/com/mindcompass/api/... (관련 테스트 다수 수정)
+
+### 주의사항
+- Diary 삭제는 물리 삭제 대신 `deletedAt` 소프트 삭제로 전환했다.
+- Diary AI 분석 결과는 Diary 본문 컬럼이 아니라 `diary_ai_analyses`와 `diary_emotion_tags`에 분리 저장되도록 맞췄다.
 - ChatControllerTest 작성
 - 채팅 세션 생성, 목록 조회, 세션 상세, 메시지 전송, 세션 종료 API 테스트 검증
 

@@ -1,27 +1,38 @@
-// 파일: app/layout.tsx
-// 역할: 전체 앱 루트 레이아웃 (공통 메타데이터 및 폰트 적용)
-import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import "./globals.css";
+"use client";
+// 파일: app/(app)/layout.tsx
+// 역할: 인증이 필요한 페이지들의 공통 레이아웃
+// 변경: 클라이언트 auth guard 추가
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import AppNav from "@/components/AppNav";
 
-export const metadata: Metadata = {
-  title: "Mind Compass | 감정나침반",
-  description: "AI 기반 멘탈 헬스 기록 및 상담 서비스",
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
+export default function AppLayout({
+                                    children,
+                                  }: {
   children: React.ReactNode;
-}>) {
+}) {
+  const router = useRouter();
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      router.replace("/login");
+    } else {
+      setIsReady(true); // 토큰 있으면 화면 표시
+    }
+  }, []);
+
+  // 토큰 확인 전엔 아무것도 렌더링하지 않음 (flash 방지)
+  if (!isReady) return null;
+
   return (
-    <html lang="ko" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#F8FAFC]">{children}</body>
-    </html>
+      <div className="flex min-h-screen bg-[#F8FAFC]">
+        <AppNav />
+        <main className="flex-1 flex flex-col pb-16 md:pb-0">
+          {children}
+        </main>
+      </div>
   );
 }
