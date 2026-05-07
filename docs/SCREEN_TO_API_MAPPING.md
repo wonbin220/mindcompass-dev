@@ -39,46 +39,50 @@
 
 # 3. Diary 화면
 
-## 일기 작성 화면
+## 날짜별 일기 목록 화면 (`/diary?date=YYYY-MM-DD`)
+- `GET /api/v1/calendar/{date}` → `List<DiaryListResponse>`
+
+**일일 제한 규칙: 하루 최대 3개**
+- 3개 미만 → "새로 쓰기" 버튼 노출
+- 3개 도달 → "오늘의 기록이 가득 찼어요 ✨" 표시, 버튼 숨김
+
+## 일기 작성 화면 (`/diary/new?date=YYYY-MM-DD`)
 - `POST /api/v1/diaries`
 
+핵심 요청:
+- `title`, `content`, `writtenAt`
+- `primaryEmotion` (선택)
+- `emotionIntensity` (선택, 1~5)
+
+제한: 같은 날짜에 이미 3개면 `400 D003` 반환
+
+## 일기 상세 화면 (`/diary/{id}`)
+- `GET /api/v1/diaries/{id}`
+
 핵심 응답:
-- `diaryId`
-- `emotionTags`
-- `riskLevel`
-- `riskScore`
-- `recommendedAction`
+- `title`, `content`, `writtenAt`
+- `primaryEmotion`, `emotionIntensity`
+- `aiAnalysis` (null 가능 — AI 분석 전 또는 실패)
 
-## 일기 상세 화면
-- `GET /api/v1/diaries/{diaryId}`
-
-핵심 응답:
-- `title`
-- `content`
-- `primaryEmotion`
-- `emotionTags`
-- `riskLevel`
-- `riskScore`
-- `riskSignals`
-- `recommendedAction`
-
-## 날짜별 일기 목록
-- `GET /api/v1/diaries?date=YYYY-MM-DD`
+## 일기 수정 화면 (`/diary/{id}/edit`)
+- `PATCH /api/v1/diaries/{id}`
 
 ---
 
 # 4. Calendar 화면
 
 ## 월간 캘린더 화면
-- `GET /api/v1/calendar/monthly-emotions?year=YYYY&month=MM`
+- `GET /api/v1/calendar?year=YYYY&month=MM`
 
-## 특정 날짜 요약
-- `GET /api/v1/calendar/daily-summary?date=YYYY-MM-DD`
+핵심 응답 (`CalendarDayResponse`):
+- `date`, `hasDiary`
+- `diaries: [{ id, primaryEmotion }]` — 하루 최대 3개
+
+날짜 클릭 → `/diary?date=YYYY-MM-DD` (날짜별 목록 페이지)
 
 빈 날짜 정책:
-- `200`
 - `hasDiary=false`
-- `diaryCount=0`
+- `diaries=[]`
 
 ---
 

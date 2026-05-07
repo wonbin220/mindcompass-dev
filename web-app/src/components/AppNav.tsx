@@ -33,10 +33,10 @@ export default function AppNav() {
         <>
             {/* 좌측 사이드바 (md 이상) */}
             <aside className="hidden md:flex flex-col w-60 min-h-screen bg-white border-r border-gray-100 px-4 py-6">
-                <div className="mb-8 px-2">
+                <Link href="/calendar" className="mb-8 px-2 block">
                     <span className="text-xl font-bold text-[#4A8EF0]">Mind Compass</span>
                     <p className="text-xs text-gray-400 mt-1">감정나침반</p>
-                </div>
+                </Link>
                 <nav className="flex flex-col gap-1 flex-1">
                     {navItems.map((item) => {
                         const isActive = pathname.startsWith(item.href);

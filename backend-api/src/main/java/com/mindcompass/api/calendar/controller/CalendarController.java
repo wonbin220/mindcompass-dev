@@ -38,14 +38,14 @@ public class CalendarController {
     }
 
     /**
-     * 특정 날짜의 일기 조회
+     * 특정 날짜의 일기 목록 조회 (하루 여러 개 지원)
      * GET /api/v1/calendar/{date}
      */
     @GetMapping("/{date}")
-    public ResponseEntity<ApiResponse<DiaryListResponse>> getDiaryByDate(
+    public ResponseEntity<ApiResponse<List<DiaryListResponse>>> getDiaryByDate(
             @CurrentUser Long userId,
             @PathVariable LocalDate date) {
-        DiaryListResponse response = calendarService.getDiaryByDate(userId, date);
+        List<DiaryListResponse> response = calendarService.getDiaryByDate(userId, date);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

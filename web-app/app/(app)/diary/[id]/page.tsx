@@ -33,10 +33,6 @@ interface DiaryDetail {
   updatedAt: string;
 }
 
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-}
 // --- 상수 ---                                                                                             [305/1969]
 
 const EMOTION_EMOJI: Record<string, string> = {
@@ -82,10 +78,8 @@ export default function DiaryDetailPage() {
   useEffect(() => {
     async function fetchDiary() {
       try {
-        const result = await api.get<ApiResponse<DiaryDetail>>(
-            `/api/v1/diaries/${id}`
-        );
-        setDiary(result.data);
+        const result = await api.get<DiaryDetail>(`/api/v1/diaries/${id}`);
+        setDiary(result);  // result가 바로 DiaryDetail
       } catch {
         router.push("/calendar"); // 없는 일기면 캘린더로
       } finally {
@@ -182,7 +176,7 @@ export default function DiaryDetailPage() {
             </p>
           </CardContent>
         </Card>
-        [159/1969]
+
         {/* AI 분석 결과 */}
         <Card>
           <CardHeader className="pb-2">

@@ -2,7 +2,7 @@
 // 역할: backend-api(http://localhost:8080) 호출을 위한 기본 fetch 래퍼
 // 호출: 각 페이지/컴포넌트 → api.ts → backend-api
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -16,6 +16,7 @@ interface RequestOptions extends RequestInit {
 async function apiFetch<T>(
   path: string,
   options: RequestOptions = {}
+
 ): Promise<T> {
   const { skipAuth = false, ...fetchOptions } = options;
 
@@ -46,7 +47,14 @@ async function apiFetch<T>(
     return undefined as T;
   }
 
-  return response.json() as Promise<T>;
+  const json = await response.json();
+
+  // ApiResponse 래퍼가 있으면 data만 꺼내서 반환
+  if (json && typeof json === "object" && "data" in json) {
+    return json.data as T;
+  }
+  return json as T;
+  
 }
 
 export const api = {

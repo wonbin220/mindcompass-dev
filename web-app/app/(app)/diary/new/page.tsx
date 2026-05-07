@@ -4,7 +4,7 @@
 // 호출: POST /api/v1/diaries → backend-api
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,11 +31,12 @@ function toLocalDateTime(date: string, time: string): string {
 
 export default function DiaryNewPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const today = new Date();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [date, setDate] = useState(today.toISOString().slice(0, 10));   // "2024-05-15"
+  const [date, setDate] = useState(searchParams.get("date") ?? today.toISOString().slice(0, 10));
   const [time, setTime] = useState(today.toTimeString().slice(0, 5));   // "09:30"
   const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
   const [emotionIntensity, setEmotionIntensity] = useState<number | null>(null);
@@ -59,8 +60,13 @@ export default function DiaryNewPage() {
           }
       );
       router.push("/calendar");
-    } catch {
-      setErrorMessage("일기 저장에 실패했습니다. 다시 시도해주세요.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("D003") || msg.includes("3개")) {
+        setErrorMessage("이 날은 이미 3개의 일기를 작성했어요. 내일 또 기록해보세요 😊");
+      } else {
+        setErrorMessage("일기 저장에 실패했습니다. 다시 시도해주세요.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +79,10 @@ export default function DiaryNewPage() {
 
   return (
       <div className="p-4 md:p-8 max-w-2xl mx-auto w-full">
-        <h2 className="text-lg font-semibold text-gray-800 mb-6">일기 쓰기</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-gray-800">일기 쓰기</h2>
+          <span className="text-xs text-gray-400">하루 최대 3개</span>
+        </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
 

@@ -5,6 +5,35 @@
 
 ---
 
+## 2026-05-07 — 하루 최대 3개 일기 + 날짜별 목록 페이지
+
+### 완료
+- 백엔드: `DiaryService.createDiary()` 에 일일 제한(3개) 검증 추가
+- 백엔드: `ErrorCode.DIARY_DAILY_LIMIT_EXCEEDED (D003)` 추가
+- 백엔드: `CalendarDayResponse` → `diaries: List<DiaryBriefInfo>` 로 변경 (단일 → 다중 지원)
+- 백엔드: `CalendarService.getDiaryByDate()` → `List<DiaryListResponse>` 반환으로 변경
+- 프론트: `/diary?date=YYYY-MM-DD` 날짜별 일기 목록 페이지 신규 생성
+- 프론트: 캘린더 날짜 클릭 → 목록 페이지로 이동, 이모지 최대 3개 표시
+- 프론트: 일기 작성 헤더에 "하루 최대 3개" 문구 추가
+
+### 변경된 파일
+- `backend-api/.../ErrorCode.java`
+- `backend-api/.../DiaryRepository.java`
+- `backend-api/.../DiaryService.java`
+- `backend-api/.../CalendarDayResponse.java`
+- `backend-api/.../CalendarService.java`
+- `backend-api/.../CalendarController.java`
+- `web-app/app/(app)/diary/page.tsx` (신규)
+- `web-app/app/(app)/diary/new/page.tsx`
+- `web-app/app/(app)/calendar/page.tsx`
+
+### UX 설계 결정
+- 3개 도달 시 에러 팝업이 아닌 "새로 쓰기" 버튼 자체를 숨기는 방식으로 처리
+- "오늘의 기록이 가득 찼어요 ✨" 메시지로 긍정적 피드백 제공
+- 백엔드 에러(D003)는 직접 API 호출 우회 경로를 위한 안전망으로만 동작
+
+---
+
 ## Phase 진행 상황 요약
 
 | Phase | 이름 | 구현 | 테스트 | 학습/검토 | 비고 |

@@ -12,11 +12,14 @@ import { api } from "@/lib/api";
 
 // --- 타입 정의 ---
 
+interface DiaryBrief {
+    id: number;
+    primaryEmotion: string | null;
+}
+
 interface CalendarDay {
     date: string;               // "2024-05-15"
-    diaryId: number | null;
-    primaryEmotion: string | null;
-    emotionIntensity: number | null;
+    diaries: DiaryBrief[];      // 하루 최대 3개
     hasDiary: boolean;
 }
 
@@ -28,12 +31,7 @@ interface CalendarMonthData {
     totalDiaries: number;
 }
 
-interface ApiResponse<T> {
-    success: boolean;
-    message: string;
-    data: T;
-}
-// --- 감정 이모지 매핑 ---                                                                                 [158/1990]
+// --- 감정 이모지 매핑 ---
 
 // 실제 모델(tired_v5) + stub predictor 값 모두 커버
 const EMOTION_EMOJI: Record<string, string> = {
@@ -72,10 +70,10 @@ export default function CalendarPage() {
         async function fetchCalendar() {
             setIsLoading(true);
             try {
-                const result = await api.get<ApiResponse<CalendarMonthData>>(
+                const result = await api.get<CalendarMonthData>(
                     `/api/v1/calendar?year=${year}&month=${month}`
                 );
-                setData(result.data);
+                setData(result);
             } catch {
                 // 토큰 만료 등 에러는 추후 처리
             } finally {
@@ -96,14 +94,12 @@ export default function CalendarPage() {
         else { setMonth(m => m + 1); }
     }
 
-    // 날짜 클릭
-    function handleDayClick(day: CalendarDay) {
-        if (day.hasDiary && day.diaryId) {
-            router.push(`/diary/${day.diaryId}`);
-        }
+    // 날짜 클릭 → 날짜별 일기 목록 페이지로 이동
+    function handleDayClick(dateStr: string) {
+        router.push(`/diary?date=${dateStr}`);
     }
 
-    // --- 캘린더 그리드 계산 ---                                                                              [96/1990]
+    // --- 캘린더 그리드 계산 ---
 
     const firstDayOfWeek = new Date(year, month - 1, 1).getDay(); // 1일이 무슨 요일?
     const daysInMonth    = new Date(year, month, 0).getDate();     // 이 달 총 일수
@@ -169,24 +165,28 @@ export default function CalendarPage() {
                                 return (
                                     <button
                                         key={dateStr}
-                                        onClick={() => dayData && handleDayClick(dayData)}
+                                        onClick={() => handleDayClick(dateStr)}
                                         className={`
                         aspect-square flex flex-col items-center justify-center
                         rounded-lg text-sm transition-colors
                         ${isToday ? "ring-2 ring-[#4A8EF0]" : ""}
                         ${dayData?.hasDiary
                                             ? "hover:bg-blue-50 cursor-pointer"
-                                            : "cursor-default"}
+                                            : "hover:bg-gray-50 cursor-pointer"}
                       `}
                                     >
                       <span className={`text-xs font-medium
                         ${isToday ? "text-[#4A8EF0]" : "text-gray-700"}`}>
                         {day}
                       </span>
-                                        {dayData?.hasDiary && dayData.primaryEmotion && (
-                                            <span className="text-base leading-none mt-0.5">
-                          {EMOTION_EMOJI[dayData.primaryEmotion] ?? "📔"}
-                        </span>
+                                        {dayData?.hasDiary && (dayData.diaries?.length ?? 0) > 0 && (
+                                            <div className="flex gap-0.5 mt-0.5">
+                                                {(dayData.diaries ?? []).slice(0, 3).map((d, i) => (
+                                                    <span key={i} className="text-xs leading-none">
+                                                        {EMOTION_EMOJI[d.primaryEmotion ?? ""] ?? "📔"}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         )}
                                     </button>
                                 );

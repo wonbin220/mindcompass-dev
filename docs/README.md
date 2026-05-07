@@ -24,6 +24,9 @@
 | `SCREEN_TO_API_MAPPING.md` | 화면별 API 호출 매핑 |
 | `BACKEND_AI_LOCAL_RUN_GUIDE.md` | 로컬 환경 실행 가이드 |
 | `IMPLEMENTATION_STATUS.md` | 구현 진행 상황 기록 |
+| `DEPLOYMENT_GUIDE.md` | AWS 배포 전 체크리스트 및 실행 명령어 | 
+| `CHAT_FRONTEND_LEARNING.md` | Next.js 채팅 구현 시 배운 것들 |
+| `FRONTEND_PAGES_LEARNING.md` | 캘린더, 일기, 리포트 페이지 구현 패턴 | 
 
 ### AI API 학습 문서 (`ai-api/`)
 

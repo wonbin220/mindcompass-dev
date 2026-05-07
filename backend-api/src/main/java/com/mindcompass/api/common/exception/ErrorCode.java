@@ -32,6 +32,7 @@ public enum ErrorCode {
     // Diary (D)
     DIARY_NOT_FOUND(HttpStatus.NOT_FOUND, "D001", "일기를 찾을 수 없습니다"),
     DIARY_ACCESS_DENIED(HttpStatus.FORBIDDEN, "D002", "해당 일기에 접근할 수 없습니다"),
+    DIARY_DAILY_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "D003", "하루에 최대 3개의 일기만 작성할 수 있습니다"),
 
     // Chat (CH)
     CHAT_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "CH001", "채팅 세션을 찾을 수 없습니다"),

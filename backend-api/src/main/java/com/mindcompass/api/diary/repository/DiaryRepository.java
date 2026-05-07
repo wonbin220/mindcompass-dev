@@ -29,4 +29,8 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
     // 일기 존재 확인 (특정 날짜)
     boolean existsByUserIdAndWrittenAtBetweenAndDeletedAtIsNull(
             Long userId, LocalDateTime startDateTime, LocalDateTime endDateTime);
+
+    // 특정 날짜 일기 수 (일일 제한 체크용)
+    long countByUserIdAndWrittenAtBetweenAndDeletedAtIsNull(
+            Long userId, LocalDateTime startDateTime, LocalDateTime endDateTime);
 }

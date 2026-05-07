@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Optional;
 
 @Slf4j
@@ -46,6 +47,15 @@ public class DiaryService {
     @Transactional
     public DiaryResponse createDiary(Long userId, CreateDiaryRequest request) {
         User user = findUserById(userId);
+
+        LocalDate writtenDate = request.getWrittenAt().toLocalDate();
+        long dailyCount = diaryRepository.countByUserIdAndWrittenAtBetweenAndDeletedAtIsNull(
+                userId,
+                writtenDate.atStartOfDay(),
+                writtenDate.plusDays(1).atStartOfDay());
+        if (dailyCount >= 3) {
+            throw new BusinessException(ErrorCode.DIARY_DAILY_LIMIT_EXCEEDED);
+        }
 
         Diary diary = Diary.builder()
                 .user(user)

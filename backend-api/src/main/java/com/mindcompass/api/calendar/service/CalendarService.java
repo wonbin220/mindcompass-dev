@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.*;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -43,23 +44,18 @@ public class CalendarService {
                 .findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
                         userId, startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
 
-        // 날짜별 일기 매핑
-        Map<LocalDate, Diary> diaryMap = diaries.stream()
-                .collect(Collectors.toMap(d -> d.getWrittenAt().toLocalDate(), d -> d, (a, b) -> a));
+        // 날짜별 일기 목록 매핑 (하루 여러 개 지원)
+        Map<LocalDate, List<Diary>> diaryMap = diaries.stream()
+                .collect(Collectors.groupingBy(d -> d.getWrittenAt().toLocalDate()));
 
         // 캘린더 데이 생성
         List<CalendarDayResponse> days = new ArrayList<>();
         for (int day = 1; day <= yearMonth.lengthOfMonth(); day++) {
             LocalDate date = yearMonth.atDay(day);
-            Diary diary = diaryMap.get(date);
+            List<Diary> dayDiaries = diaryMap.getOrDefault(date, Collections.emptyList());
 
-            if (diary != null) {
-                days.add(CalendarDayResponse.of(
-                        date,
-                        diary.getId(),
-                        diary.getPrimaryEmotion(),
-                        diary.getEmotionIntensity()
-                ));
+            if (!dayDiaries.isEmpty()) {
+                days.add(CalendarDayResponse.of(date, dayDiaries));
             } else {
                 days.add(CalendarDayResponse.empty(date));
             }
@@ -74,16 +70,17 @@ public class CalendarService {
     }
 
     /**
-     * 특정 날짜의 일기 조회
+     * 특정 날짜의 일기 목록 조회 (하루 여러 개 지원)
      */
-    public DiaryListResponse getDiaryByDate(Long userId, LocalDate date) {
+    public List<DiaryListResponse> getDiaryByDate(Long userId, LocalDate date) {
         LocalDateTime start = date.atStartOfDay();
         LocalDateTime end = date.plusDays(1).atStartOfDay();
 
-        return diaryRepository.findFirstByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtAsc(
+        return diaryRepository.findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
                         userId, start, end)
+                .stream()
                 .map(DiaryListResponse::from)
-                .orElse(null);
+                .toList();
     }
 
     /**

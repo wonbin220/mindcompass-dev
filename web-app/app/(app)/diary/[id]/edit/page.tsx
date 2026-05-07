@@ -20,10 +20,6 @@ interface DiaryDetail {
     writtenAt: string; // "2024-05-15T09:30:00"
 }
 
-interface ApiResponse<T> {
-    success: boolean;
-    data: T;
-}                                                                                                              [159/1977]
 // "2024-05-15T09:30:00" → date: "2024-05-15", time: "09:30"
 function splitDateTime(dateTimeStr: string) {
     const [date, timeFull] = dateTimeStr.split("T");
@@ -52,11 +48,8 @@ export default function DiaryEditPage() {
     useEffect(() => {
         async function fetchDiary() {
             try {
-                const result = await api.get<ApiResponse<DiaryDetail>>(
-                    `/api/v1/diaries/${id}`
-                );
-                const diary = result.data;
-
+                const result = await api.get<DiaryDetail>(`/api/v1/diaries/${id}`);
+                const diary = result;
                 // 기존 값을 state에 채워넣기
                 setTitle(diary.title);
                 setContent(diary.content);
