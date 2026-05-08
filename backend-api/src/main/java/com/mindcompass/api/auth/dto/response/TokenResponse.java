@@ -11,7 +11,7 @@ import lombok.Getter;
 @Builder
 public class TokenResponse {
 
-    private final String accessToken;
+    private final String accessToken; // ← 이게 JSON 키 이름 그대로
     private final String refreshToken;
     private final Long expiresIn;     // Access Token 만료 시간 (초)
     private final String tokenType;   // "Bearer"

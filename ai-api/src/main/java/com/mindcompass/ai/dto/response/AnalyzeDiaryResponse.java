@@ -48,6 +48,13 @@ public class AnalyzeDiaryResponse {
     private String failureReason;
 
     /**
+     * 위험도 레벨
+     * - "LOW", "MEDIUM", "HIGH"
+     * - 키워드 기반 위험도 분석 결과
+     */
+    private String riskLevel;
+
+    /**
      * Fallback 응답 생성
      */
     public static AnalyzeDiaryResponse fallback(String reason) {

@@ -13,11 +13,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
 
+const EMOTIONS = [
+    { code: "happy",   emoji: "😊", label: "기쁨" },
+    { code: "calm",    emoji: "😌", label: "평온" },
+    { code: "anxious", emoji: "😰", label: "불안" },
+    { code: "sad",     emoji: "😢", label: "슬픔" },
+    { code: "angry",   emoji: "😠", label: "화남" },
+    { code: "tired",   emoji: "😴", label: "피곤" },
+];
+const INTENSITIES = [1, 2, 3, 4, 5];
+
 interface DiaryDetail {
     id: number;
     title: string;
     content: string;
     writtenAt: string; // "2024-05-15T09:30:00"
+    primaryEmotion?: string | null;
+    emotionIntensity?: number | null;
 }
 
 // "2024-05-15T09:30:00" → date: "2024-05-15", time: "09:30"
@@ -43,6 +55,8 @@ export default function DiaryEditPage() {
     const [isLoading, setIsLoading] = useState(true);  // 초기 fetch 로딩
     const [isSaving, setIsSaving] = useState(false);   // 저장 로딩
     const [errorMessage, setErrorMessage] = useState("");
+    const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
+    const [emotionIntensity, setEmotionIntensity] = useState<number | null>(null);
 
     // 마운트 시 기존 데이터 fetch → 폼에 채우기
     useEffect(() => {
@@ -57,6 +71,10 @@ export default function DiaryEditPage() {
                 const { date, time } = splitDateTime(diary.writtenAt);
                 setDate(date);
                 setTime(time);
+
+                setSelectedEmotion(diary.primaryEmotion ?? null);
+                setEmotionIntensity(diary.emotionIntensity ?? null);
+
             } catch {
                 router.push("/calendar");
             } finally {
@@ -66,11 +84,20 @@ export default function DiaryEditPage() {
         fetchDiary();
     }, [id]);
 
-    async function handleSubmit(e: React.FormEvent) {
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        setIsSaving(true);
         setErrorMessage("");
 
+        if (!title.trim()) {
+            setErrorMessage("제목을 입력해주세요.");
+            return;
+        }
+        if (!content.trim()) {
+            setErrorMessage("내용을 입력해주세요.");
+            return;
+        }
+
+        setIsSaving(true);
         try {
             await api.patch(
                 `/api/v1/diaries/${id}`,
@@ -78,9 +105,11 @@ export default function DiaryEditPage() {
                     title,
                     content,
                     writtenAt: toLocalDateTime(date, time),
+                    ...(selectedEmotion !== undefined && { primaryEmotion: selectedEmotion }),
+                    ...(emotionIntensity !== undefined && { emotionIntensity }),
                 }
             );
-            router.push(`/diary/${id}`); // 수정 완료 → 상세 페이지로
+            router.push(`/diary/${id}`);
         } catch {
             setErrorMessage("저장에 실패했습니다. 다시 시도해주세요.");
         } finally {
@@ -154,6 +183,46 @@ export default function DiaryEditPage() {
 
                     </CardContent>
                 </Card>
+
+                <Card>                                                                                                       [14/1859]
+                    <CardContent className="pt-6 flex flex-col gap-4">
+                        <p className="text-sm font-medium text-gray-700">
+                            오늘의 감정 <span className="text-gray-400 font-normal">(선택)</span>
+                        </p>
+                        <div className="grid grid-cols-6 gap-2">
+                            {EMOTIONS.map((em) => (
+                                <button
+                                    key={em.code}
+                                    type="button"
+                                    onClick={() => setSelectedEmotion(prev => prev === em.code ? null : em.code)}
+                                    className={`flex flex-col items-center gap-1 py-2 rounded-lg border transition-colors 
+                                    ${selectedEmotion === em.code
+                                        ? "border-[#4A8EF0] bg-blue-50"
+                                        : "border-gray-200 hover:bg-gray-50"}`}>
+                                    <span className="text-xl">{em.emoji}</span>
+                                    <span className="text-xs text-gray-600">{em.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                        {selectedEmotion && (
+                            <div className="flex gap-2">
+                                {INTENSITIES.map((n) => (
+                                    <button
+                                        key={n}
+                                        type="button"
+                                        onClick={() => setEmotionIntensity(prev => prev === n ? null : n)}
+                                        className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors
+                                        ${emotionIntensity === n
+                                            ? "border-[#4A8EF0] bg-blue-50 text-[#4A8EF0]"
+                                            : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                                        {n}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
 
                 {errorMessage && (
                     <p className="text-red-500 text-sm">{errorMessage}</p>

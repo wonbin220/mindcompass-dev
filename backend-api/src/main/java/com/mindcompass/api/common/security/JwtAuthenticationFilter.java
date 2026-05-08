@@ -16,6 +16,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import jakarta.servlet.http.Cookie;
+import java.util.Arrays;
 
 import java.io.IOException;
 import java.util.List;
@@ -27,6 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
+    private static final String ACCESS_TOKEN_COOKIE = "access_token";
 
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -65,10 +68,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // 헤더에서 토큰 추출
     private String resolveToken(HttpServletRequest request) {
+        // 1순위: HttpOnly 쿠키
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            return Arrays.stream(cookies)
+                    .filter(c -> ACCESS_TOKEN_COOKIE.equals(c.getName()))
+                    .map(Cookie::getValue)
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        // 2순위: Authorization 헤더 fallback
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
             return bearerToken.substring(BEARER_PREFIX.length());
         }
+
         return null;
     }
 }

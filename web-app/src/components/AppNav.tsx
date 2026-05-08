@@ -7,26 +7,27 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { api } from "@/lib/api";
 
 const navItems = [
     { href: "/calendar", label: "캘린더", icon: "📅" },
     { href: "/diary/new", label: "기록", icon: "📝" },
     { href: "/chat", label: "대화", icon: "💬" },
     { href: "/report", label: "리포트", icon: "📊" },
+    { href: "/settings", label: "설정", icon: "⚙️ " },
 ];
 
 export default function AppNav() {
     const pathname = usePathname();
     const router = useRouter();
 
-    function handleLogout() {
-        // 1. localStorage 토큰 삭제
-        localStorage.removeItem("access_token");
-
-        // 2. cookie 만료 (max-age=0으로 즉시 삭제)
-        document.cookie = "access_token=; path=/; max-age=0; SameSite=Strict";
-
-        // 3. 로그인 페이지로 이동
+    async function handleLogout() {
+        try {
+            // 백엔드가 HttpOnly 쿠키를 max-age=0으로 삭제해줌
+            await api.post("/api/v1/auth/logout", undefined, { skipAuth: true });
+        } catch {
+            // 실패해도 로그인 페이지로 이동 (쿠키 만료까지 기다리지 않음)
+        }
         router.replace("/login");
     }
     return (

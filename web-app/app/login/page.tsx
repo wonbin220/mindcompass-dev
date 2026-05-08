@@ -26,18 +26,19 @@ export default function LoginPage() {
     setErrorMessage("");
 
     try {
-      const data = await api.post<{ accessToken: string }>(
+      // 백엔드가 Set-Cookie로 access_token, refresh_token을 심어줌
+      // 응답 body에 토큰 없음 → 제네릭 타입 void
+      await api.post<void>(
           "/api/v1/auth/login",
           { email, password },
           { skipAuth: true }
       );
-      // 이걸로 교체
-      localStorage.setItem("access_token", data.accessToken);
-      // middleware용: cookie에도 저장 (서버에서 읽을 수 있도록)
-      document.cookie = `access_token=${data.accessToken}; path=/; max-age=3600; SameSite=Strict`;
+
+      // open redirect 방어: "/"로 시작하고 "//"로 시작하지 않는 경로만 허용
       // 변경: from 파라미터가 있으면 거기로, 없으면 홈으로
       const from = searchParams.get("from") || "/";
-      router.push("/");
+      const safePath = from.startsWith("/") && !from.startsWith("//") ? from : "/";
+      router.push(safePath);
     } catch {
       setErrorMessage("이메일 또는 비밀번호가 올바르지 않습니다.");
     } finally {

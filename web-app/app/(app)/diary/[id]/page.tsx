@@ -95,7 +95,7 @@ export default function DiaryDetailPage() {
     setIsDeleting(true);
     try {
       await api.delete(`/api/v1/diaries/${id}`);
-      router.push("/calendar");
+      router.push(`/diary?date=${diary?.writtenAt.slice(0, 10) ?? ""}`);
     } catch {
       setIsDeleting(false);
     }
@@ -195,12 +195,24 @@ export default function DiaryDetailPage() {
                   {diary.aiAnalysis.riskLevel && (
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-500">위험도</span>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full
-                      ${RISK_STYLE[diary.aiAnalysis.riskLevel]
-                        ?? "text-gray-600 bg-gray-100"}`}>
-                      {RISK_LABEL[diary.aiAnalysis.riskLevel]
-                          ?? diary.aiAnalysis.riskLevel}
-                    </span>
+                        <div className="relative group inline-block" tabIndex={0}>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full cursor-help
+                            ${RISK_STYLE[diary.aiAnalysis.riskLevel] ?? "text-gray-600 bg-gray-100"}`}>
+                            {RISK_LABEL[diary.aiAnalysis.riskLevel] ?? diary.aiAnalysis.riskLevel}
+                        </span>
+                          <div className="absolute bottom-full right-0 mb-2 w-52 bg-gray-800 text-white
+                              text-xs rounded-lg px-3 py-2 leading-relaxed
+                              opacity-0 group-hover:opacity-100 group-focus:opacity-100
+                              pointer-events-none transition-opacity duration-150 z-10">
+                            일기 내용의 감정적 위험 신호 수준입니다.
+                            <div className="mt-1 flex flex-col gap-0.5">
+                              <span>🟢 낮음 — 안전한 상태</span>
+                              <span>🟡 보통 — 주의 필요</span>
+                              <span>🔴 높음 — 즉각적 관심 필요</span>
+                            </div>
+                            <div className="absolute top-full right-3 border-4 border-transparent border-t-gray-800" />
+                          </div>
+                        </div>
                       </div>
                   )}
 

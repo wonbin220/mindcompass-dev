@@ -43,10 +43,22 @@ export default function DiaryNewPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsLoading(true);
     setErrorMessage("");
+
+    // 공백만 입력한 경우 차단
+    if (!title.trim()) {
+      setErrorMessage("제목을 입력해주세요.");
+      return;
+    }
+    if (!content.trim()) {
+      setErrorMessage("내용을 입력해주세요.");
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       await api.post(
@@ -59,7 +71,7 @@ export default function DiaryNewPage() {
             ...(emotionIntensity && { emotionIntensity }),
           }
       );
-      router.push("/calendar");
+      router.push(`/diary?date=${date}`);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "";
       if (msg.includes("D003") || msg.includes("3개")) {

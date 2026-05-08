@@ -4,6 +4,8 @@
 
 package com.mindcompass.api.diary.dto.request;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,4 +23,9 @@ public class UpdateDiaryRequest {
     private String content;
 
     private LocalDateTime writtenAt;
+
+    private String primaryEmotion;
+
+    @Min(1) @Max(5)
+    private Integer emotionIntensity;
 }

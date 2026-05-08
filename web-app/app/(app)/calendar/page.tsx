@@ -142,7 +142,7 @@ export default function CalendarPage() {
                             </div>
                         ))}
                     </div>
-                    {/* 날짜 그리드 */}                                                                                [52/1990]
+                    {/* 날짜 그리드 */}                                                                               
                     {isLoading ? (
                         <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
                             불러오는 중...

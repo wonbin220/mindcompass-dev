@@ -4,6 +4,150 @@
 각 세션이 끝날 때 업데이트한다.
 
 ---
+## 2026-05-08 — 프론트엔드 인증/UX 개선
+
+### 완료
+
+#### 인증 흐름 강화
+- `api.ts`: 401 발생 시 refresh token으로 자동 갱신 시도, 실패 시 로그아웃
+- `api.ts`: `clearTokens()` 추가 — access_token + refresh_token 동시 삭제
+- `login/page.tsx`: 로그인 성공 시 refresh_token도 localStorage에 저장
+- `AppNav.tsx`: 로그아웃 시 refresh_token도 함께 삭제
+
+#### 설정 페이지
+- `app/(app)/settings/page.tsx` 신규 생성
+- `GET /api/v1/users/me` 연동 — 닉네임, 이메일, 가입일 표시
+- `PATCH /api/v1/users/me` 연동 — 닉네임 인라인 수정 (2~50자 검증)
+- AppNav에 설정 메뉴(⚙️ ) 추가
+
+#### 채팅 세션 목록
+- `chat/page.tsx` 전면 개편 — 항상 새 세션 생성 → 세션 목록 화면 우선 표시
+- `GET /api/v1/chat/sessions` 연동 (Spring Page 응답 → `content` 필드 추출)
+- `GET /api/v1/chat/sessions/{id}` 연동 — 기존 세션 메시지 이어보기
+- `POST /api/v1/chat/sessions/{id}/close` 연동 — 대화 종료 버튼
+- "← 목록" 버튼으로 세션 목록 ↔ 채팅 화면 전환
+
+#### UX 개선
+- 일기 저장 후 라우팅: `/calendar` → `/diary?date=YYYY-MM-DD`
+
+### 변경된 파일
+- `web-app/src/lib/api.ts`
+- `web-app/app/login/page.tsx`
+- `web-app/src/components/AppNav.tsx`
+- `web-app/app/(app)/settings/page.tsx` (신규)
+- `web-app/app/(app)/chat/page.tsx`
+- `web-app/app/(app)/diary/new/page.tsx`
+
+### API 응답 구조 확인 사항
+- `GET /api/v1/chat/sessions` → Spring Page 객체: `{ content: ChatSession[], totalPages, ... }`
+- `GET /api/v1/chat/sessions/{id}` → 메시지 배열 직접 반환: `Message[]`
+
+#### 보안 강화
+- `login/page.tsx`: `from` 파라미터 open redirect 방어 — `startsWith("/") && !startsWith("//")` 검증
+- `login/page.tsx`: 로그인 성공 시 `refresh_token` cookie에도 병행 저장 (max-age=604800)
+
+#### 입력값 검증
+- `diary/new/page.tsx`: 제목/내용 공백만 입력 시 차단 (`trim()` 검증)
+- `diary/new/page.tsx`: `React.FormEvent` → `React.FormEvent<HTMLFormElement>` 타입 수정
+
+#### 채팅 세션 종료
+- `chat/page.tsx`: "대화 종료" 버튼 추가 — `POST /api/v1/chat/sessions/{id}/close` 연동
+- 종료 후 세션 목록 화면으로 복귀, 목록 내 해당 세션 상태 "CLOSED"로 즉시 반영
+
+### 변경된 파일 (추가)
+- `web-app/app/login/page.tsx`
+- `web-app/app/(app)/diary/new/page.tsx`
+- `web-app/app/(app)/chat/page.tsx`
+
+#### 일기 수정/삭제 페이지 확인 및 개선
+- `diary/[id]/page.tsx`: 삭제 후 `/diary?date=${diary?.writtenAt.slice(0,10)}` 라우팅 개선
+- `diary/[id]/edit/page.tsx`: trim() 검증, `React.FormEvent<HTMLFormElement>` 타입 수정
+- 연결 흐름 정상 확인: `/diary?date=` → `/diary/{id}` → `/diary/{id}/edit`
+
+### 다음 작업
+- (완료됨 — 아래 2026-05-08 2차 세션 참고)
+
+## 2026-05-08 — HttpOnly 쿠키 전환 + 회원 탈퇴
+
+### 완료
+
+#### 보안: HttpOnly 쿠키 전환 (localStorage → Set-Cookie)
+- `AuthController.java`: 로그인/리프레시 응답을 JSON body 대신 HttpOnly 쿠키로 전환
+- `AuthController.java`: `POST /api/v1/auth/logout` 추가 — 쿠키 max-age=0 삭제
+- `JwtAuthenticationFilter.java`: 쿠키 우선 읽기, Authorization 헤더 fallback
+- `next.config.ts`: `/api/**` → `http://localhost:8080` proxy rewrite 추가
+- `api.ts`: localStorage 토큰 코드 전면 제거, `credentials: "include"` 추가, 상대경로 전환
+- `login/page.tsx`: localStorage/document.cookie 저장 코드 제거
+- `AppNav.tsx`: `POST /api/v1/auth/logout` 호출로 로그아웃 처리
+
+#### 설정 페이지: 회원 탈퇴
+- `settings/page.tsx`: 회원 탈퇴 UI 추가 — 2단계 확인 후 `DELETE /api/v1/users/me` 호출
+- 탈퇴 성공 시 logout API 호출 후 `/login` 리다이렉트
+
+### 변경된 파일
+- `backend-api/.../AuthController.java`
+- `backend-api/.../JwtAuthenticationFilter.java`
+- `web-app/next.config.ts`
+- `web-app/src/lib/api.ts`
+- `web-app/app/login/page.tsx`
+- `web-app/src/components/AppNav.tsx`
+- `web-app/app/(app)/settings/page.tsx`
+
+  ---
+## 2026-05-08 — 미들웨어 + 일기 감정 수정 + AI 체인 연동
+
+### 완료
+
+#### 미들웨어: 라우트 보호
+- `middleware.ts`: 미인증 접근 시 `/login?from=pathname` 리다이렉트
+- 보호 경로: `/calendar`, `/diary`, `/chat`, `/report`, `/settings`
+
+#### 일기 수정: 감정/강도 편집
+- `diary/[id]/edit/page.tsx`: 감정 선택 + 강도(1~5) UI 추가
+- `UpdateDiaryRequest.java`: `primaryEmotion`, `emotionIntensity` 필드 추가
+- `DiaryService.updateDiary()`: 감정 업데이트 + 감정 태그 동기화
+
+#### AI 체인 연동: backend-api → ai-api → ai-api-fastapi
+- `FastApiEmotionClient.java` 신규: ai-api에서 FastAPI 감정분류 HTTP 호출
+- `ai-api/application.yml`: `fastapi.emotion.base-url` 공통 설정 추가
+- `DiaryAnalysisService.java`: FastAPI 우선 → OpenAI 요약 보강 → keyword fallback 흐름
+- `DiaryAnalysisService.java`: 한국어 감정 레이블 매핑 추가 (EMOTION_KO)
+- AI 분석 표시: "오늘 일기에서 '기쁨' 감정이 감지되었습니다. (신뢰도 99%)" 형태로 개선
+- 3서버 전체 체인 동작 확인 완료 (emotion=happy, confidence=0.999)
+
+### 변경된 파일
+- `web-app/middleware.ts`
+- `web-app/app/(app)/diary/[id]/edit/page.tsx`
+- `backend-api/.../UpdateDiaryRequest.java`
+- `backend-api/.../DiaryService.java`
+- `ai-api/.../client/FastApiEmotionClient.java` (신규)
+- `ai-api/.../service/DiaryAnalysisService.java`
+- `ai-api/src/main/resources/application.yml`
+
+## 2026-05-08 — 리포트/채팅/위험도 UI 개선
+
+### 완료
+
+#### 리포트 페이지 개선
+- `report/page.tsx`: `totalChats` 필드 타입 추가 및 요약 카드에 채팅 횟수 표시
+- `report/page.tsx`: `EmotionComparison` 타입 추가, 월간 전월 대비 카드 구현 (일기 수/감정 강도/추세)
+
+#### 채팅 UX 개선
+- `chat/page.tsx`: `useRef` + `useEffect`로 새 메시지 도착 시 자동 스크롤
+- `chat/page.tsx`: SUPPORTIVE 응답 스타일 추가 (amber 계열)
+- `chat/page.tsx`: `input` → `textarea` 교체, Shift+Enter 줄바꿈 지원
+
+#### 일기 위험도 표시
+- `ai-api/.../AnalyzeDiaryResponse.java`: `riskLevel` 필드 추가
+- `ai-api/.../DiaryAnalysisService.java`: `RiskScoreService` 주입, 키워드 기반 위험도 분석 항상 수행
+- `diary/[id]/page.tsx`: 위험도 배지에 툴팁 추가 (hover/touch 시 낮음/보통/높음 설명)
+
+### 변경된 파일
+- `web-app/app/(app)/report/page.tsx`
+- `web-app/app/(app)/chat/page.tsx`
+- `web-app/app/(app)/diary/[id]/page.tsx`
+- `ai-api/.../dto/response/AnalyzeDiaryResponse.java`
+- `ai-api/.../service/DiaryAnalysisService.java`
 
 ## 2026-05-07 — 하루 최대 3개 일기 + 날짜별 목록 페이지
 
@@ -460,3 +604,71 @@ AIHub 감성대화말뭉치 원본 JSON으로 KcELECTRA를 6클래스 전체 학
 - 현재 보유 데이터로는 불가능
 - 현재 하이브리드 구조(tired_v5 + LimYeri)가 최선
 - all_v1 모델은 폐기, artifacts/all_v1은 참고용으로만 보존
+
+---
+
+## Session Handoff - 2026-05-07
+
+### 완료
+
+#### 프론트엔드 — 캘린더 / 일기 / 리포트 페이지
+
+- **캘린더 페이지** (`/calendar`): 날짜 클릭 시 `/diary?date=YYYY-MM-DD` 목록 페이지로 이동
+- **캘린더 페이지**: `CalendarDay` 구조를 단일 diary → `diaries: DiaryBrief[]`로 변경, 이모지 최대 3개 표시
+- **날짜별 일기 목록 페이지** (`/diary?date=...`) 신규 생성: 해당 날짜 일기 목록 + 3개 도달 시 "새로 쓰기" 버튼 숨김
+- **일기 작성 페이지** (`/diary/new`): URL `?date=` 파라미터로 날짜 자동 입력, 헤더에 "하루 최대 3개" 문구 추가
+- **일기 작성 페이지**: D003 에러 시 친절한 한국어 메시지로 표시 ("이 날은 이미 3개의 일기를 작성했어요 😊")
+- **AppNav**: "Mind Compass" 로고 클릭 시 `/calendar`로 이동
+- **리포트 페이지** (`/report`): 실제 API 연동(`/api/v1/reports/weekly`, `/api/v1/reports/monthly`)
+- **리포트 페이지**: SVG 기반 SparklineChart 컴포넌트 추가 (주간 dailyTrends, 월간 weeklySummaries)
+- **리포트 페이지**: 감정 분포 막대 그래프(EmotionBars) 구현
+
+#### 백엔드 — 하루 3개 일기 제한
+
+- `DiaryService.createDiary()`: 일일 3개 초과 시 `BusinessException(D003)` 발생
+- `ErrorCode.DIARY_DAILY_LIMIT_EXCEEDED (D003)` 추가
+- `CalendarDayResponse`: 단일 diary 필드 → `List<DiaryBriefInfo> diaries` 로 변경
+- `CalendarService.getDiaryByDate()`: `List<DiaryListResponse>` 반환으로 변경
+- `CalendarController.getDiaryByDate()`: 반환 타입 변경에 맞게 업데이트
+- `DiaryRepository`: `countByUserIdAndWrittenAtBetween...` 메서드 추가
+
+#### 학습 문서
+
+- `docs/FRONTEND_PAGES_LEARNING.md` 신규 생성 (캘린더/일기/리포트 프론트엔드 구현 패턴)
+- `docs/DIARY_API_LEARNING.md`, `docs/DB_TABLE_SPECIFICATION.md`, `docs/SCREEN_TO_API_MAPPING.md` 3개 일기 제한 반영
+
+### 진행중
+- 없음
+
+### 다음 작업 (프론트엔드 — 우선순위 순)
+
+1. **401 자동 로그아웃** (높음): `web-app/src/lib/api.ts`에서 401 감지 시 토큰 삭제 + `/login` 리다이렉트
+2. **리프레시 토큰 자동 갱신** (높음): 401 발생 시 `POST /api/v1/auth/refresh` 먼저 시도, 실패하면 로그아웃
+3. **프로필/설정 페이지** (중간): `GET /api/v1/users/me` 연동, 내 정보 표시
+4. **채팅 이전 세션 목록** (중간): `GET /api/v1/chat/sessions` 연동, 이전 대화 이력 접근 가능
+5. **일기 저장 후 라우팅** (낮음): 저장 후 `/diary?date=YYYY-MM-DD`로 이동 (현재는 `/calendar`)
+
+### 블로커
+- 없음
+
+### 변경된 파일
+- `web-app/app/(app)/calendar/page.tsx`
+- `web-app/app/(app)/diary/page.tsx` (신규)
+- `web-app/app/(app)/diary/new/page.tsx`
+- `web-app/app/(app)/report/page.tsx`
+- `web-app/src/components/AppNav.tsx`
+- `backend-api/.../ErrorCode.java`
+- `backend-api/.../DiaryRepository.java`
+- `backend-api/.../DiaryService.java`
+- `backend-api/.../CalendarDayResponse.java`
+- `backend-api/.../CalendarService.java`
+- `backend-api/.../CalendarController.java`
+- `docs/FRONTEND_PAGES_LEARNING.md` (신규)
+- `docs/DIARY_API_LEARNING.md`
+- `docs/DB_TABLE_SPECIFICATION.md`
+- `docs/SCREEN_TO_API_MAPPING.md`
+
+### 주의사항
+- 캘린더 `dayData.diaries` 필드는 optional chaining(`?.`)으로 방어 처리 필수 (`?.length ?? 0`)
+- SparklineChart는 외부 라이브러리 없이 순수 SVG로 구현 (viewBox 기반 반응형)
+- 3개 제한 UX는 에러 팝업이 아닌 버튼 숨김 방식 — 백엔드 D003은 직접 API 우회 방어용

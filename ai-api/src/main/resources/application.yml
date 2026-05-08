@@ -33,6 +33,12 @@ logging:
     com.mindcompass.ai: DEBUG
     org.springframework.ai: INFO
 
+
+# FastAPI 모델 서버 설정
+fastapi:
+  emotion:
+    base-url: ${FASTAPI_BASE_URL:http://localhost:8090}
+    timeout-ms: 3000
 ---
 # ========================================
 # dev 프로필 (기본)
@@ -80,3 +86,6 @@ logging:
   level:
     com.mindcompass.ai: INFO
     org.springframework.ai: DEBUG
+
+
+

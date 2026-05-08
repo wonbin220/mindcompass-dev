@@ -91,6 +91,17 @@ public class DiaryService {
         validateOwnership(diary, userId);
 
         diary.update(request.getTitle(), request.getContent(), request.getWrittenAt());
+
+        // 감정 필드가 전달된 경우 업데이트
+        if (request.getPrimaryEmotion() != null || request.getEmotionIntensity() != null) {
+            diary.updateUserEmotion(request.getPrimaryEmotion(), request.getEmotionIntensity());
+            syncUserEmotionTag(diary);
+        }
+
+        if (request.getContent() != null || request.getTitle() != null) {
+            tryAnalyzeDiary(diary);
+        }
+
         log.info("일기 수정 완료: diaryId={}", diaryId);
 
         if (request.getContent() != null || request.getTitle() != null) {

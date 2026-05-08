@@ -28,6 +28,7 @@ interface WeeklyReport {
     startDate: string;
     endDate: string;
     totalDiaries: number;
+    totalChats: number;
     averageEmotionScore: number | null;
     emotionDistribution: Record<string, number>;
     dominantEmotion: string | null;
@@ -39,11 +40,19 @@ interface MonthlyReport {
     year: number;
     month: number;
     totalDiaries: number;
+    totalChats: number;
     averageEmotionScore: number | null;
     emotionDistribution: Record<string, number>;
     dominantEmotion: string | null;
     aiInsight: string | null;
     weeklySummaries: WeeklySummary[];
+    comparisonWithLastMonth: EmotionComparison | null;
+}
+
+interface EmotionComparison {
+    scoreDiff: number;
+    diaryCountDiff: number;
+    trend: "improving" | "declining" | "stable";
 }
 
 const EMOTION_LABEL: Record<string, string> = {
@@ -147,7 +156,7 @@ function SparklineChart({ data }: { data: ChartPoint[] }) {
     );
 }
 
-function EmotionBars({ distribution }: { distribution: Record<string, number> }) {                          [148/1974]
+function EmotionBars({ distribution }: { distribution: Record<string, number> }) {
     const total = Object.values(distribution).reduce((a, b) => a + b, 0);
     if (total === 0) {
         return <p className="text-sm text-gray-400">기록된 감정이 없습니다.</p>;
@@ -178,7 +187,7 @@ function EmotionBars({ distribution }: { distribution: Record<string, number> })
         </div>
     );
 }
-export default function ReportPage() {                                                                      [116/1974]
+export default function ReportPage() {
     const [period, setPeriod] = useState<Period>("weekly");
     const [weekly, setWeekly] = useState<WeeklyReport | null>(null);
     const [monthly, setMonthly] = useState<MonthlyReport | null>(null);
@@ -206,7 +215,7 @@ export default function ReportPage() {                                          
         }
         fetchReport();
     }, [period]);
-    const data = period === "weekly" ? weekly : monthly;                                                     [87/1974]
+    const data = period === "weekly" ? weekly : monthly;
     const aiText = period === "weekly" ? weekly?.aiSummary : monthly?.aiInsight;
     const periodLabel = period === "weekly"
         ? (weekly ? `${weekly.startDate} ~ ${weekly.endDate}` : "이번 주")
@@ -246,6 +255,12 @@ export default function ReportPage() {                                          
                         <CardContent className="pt-6">
                             <p className="text-sm text-gray-500 mb-3">{periodLabel}</p>
                             <div className="flex gap-6">
+                                {data.totalChats > 0 && (
+                                    <div>
+                                        <p className="text-xs text-gray-400">채팅</p>
+                                        <p className="text-xl font-bold text-[#4A8EF0]">{data.totalChats}회</p>
+                                    </div>
+                                )}
                                 <div>
                                     <p className="text-xs text-gray-400">일기</p>
                                     <p className="text-xl font-bold text-[#4A8EF0]">{data.totalDiaries}개</p>
@@ -281,7 +296,7 @@ export default function ReportPage() {                                          
                         </CardContent>
                     </Card>
                     {/* 감정 강도 추이 차트 */}
-                    {period === "weekly" && weekly?.dailyTrends?.length > 0 && (
+                    {period === "weekly" && weekly && (weekly.dailyTrends?.length ?? 0) > 0 && (
                         <Card>
                             <CardHeader className="pb-2">
                                 <p className="text-sm font-medium text-gray-700">감정 강도 추이</p>
@@ -297,7 +312,7 @@ export default function ReportPage() {                                          
                             </CardContent>
                         </Card>
                     )}
-                    {period === "monthly" && monthly?.weeklySummaries?.length > 0 && (
+                    {period === "monthly" && monthly && (monthly.weeklySummaries?.length ?? 0) > 0 && (
                         <Card>
                             <CardHeader className="pb-2">
                                 <p className="text-sm font-medium text-gray-700">주별 감정 강도 추이</p>
@@ -313,7 +328,45 @@ export default function ReportPage() {                                          
                             </CardContent>
                         </Card>
                     )}
-
+                    {period === "monthly" && monthly?.comparisonWithLastMonth && (() => {
+                        const c = monthly.comparisonWithLastMonth!;
+                        const trendConfig = {
+                            improving: { label: "상승 ↑", color: "text-green-600 bg-green-50" },
+                            declining: { label: "하락 ↓", color: "text-red-600 bg-red-50" },
+                            stable:    { label: "유지 →", color: "text-gray-600 bg-gray-100" },
+                        };
+                        const t = trendConfig[c.trend];
+                        return (
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <p className="text-sm font-medium text-gray-700">전월 대비</p>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex gap-6 items-center">
+                                        <div>
+                                            <p className="text-xs text-gray-400">일기 수</p>
+                                            <p className={`text-lg font-bold ${c.diaryCountDiff >= 0 ? "text-green-600" :
+                                                "text-red-500"}`}>
+                                                {c.diaryCountDiff >= 0 ? "+" : ""}{c.diaryCountDiff}개
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-400">감정 강도</p>
+                                            <p className={`text-lg font-bold ${c.scoreDiff >= 0 ? "text-green-600" : "text-red-500"}`}>
+                                                {c.scoreDiff >= 0 ? "+" : ""}{c.scoreDiff.toFixed(1)}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-400">추세</p>
+                                            <span className={`text-sm font-medium px-2 py-0.5 rounded-full ${t.color}`}>
+                              {t.label}
+                          </span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        );
+                    })()}
                     {/* AI 분석 */}
                     <Card>
                         <CardHeader className="pb-2">

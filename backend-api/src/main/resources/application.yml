@@ -7,7 +7,7 @@ spring:
     name: backend-api
 
   profiles:
-    active: local  # 기본 프로필
+    active: prod  # 기본 프로필
 
   # JPA 설정
   jpa:
