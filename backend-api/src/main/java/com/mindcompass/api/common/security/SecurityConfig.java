@@ -47,10 +47,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/health").permitAll()
                         .requestMatchers("/error").permitAll()
-
-                        // Swagger (개발용)
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-
                         // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
                 )
@@ -71,9 +67,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // TODO: 프로덕션에서는 허용 도메인을 제한해야 함
-        configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://yourdomain.com"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

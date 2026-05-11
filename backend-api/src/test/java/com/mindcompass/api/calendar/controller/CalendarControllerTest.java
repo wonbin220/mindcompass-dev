@@ -50,9 +50,12 @@ class CalendarControllerTest {
                 .days(List.of(
                         CalendarDayResponse.builder()
                                 .date(LocalDate.of(year, month, 1))
-                                .diaryId(1L)
-                                .primaryEmotion("기쁨")
-                                .emotionIntensity(5)
+                                .diaries(List.of(
+                                        CalendarDayResponse.DiaryBriefInfo.builder()
+                                                .id(1L)
+                                                .primaryEmotion("기쁨")
+                                                .build()
+                                ))
                                 .hasDiary(true)
                                 .build(),
                         CalendarDayResponse.empty(LocalDate.of(year, month, 2))
@@ -72,8 +75,8 @@ class CalendarControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.year").value(year))
                 .andExpect(jsonPath("$.data.month").value(month))
-                .andExpect(jsonPath("$.data.days[0].diaryId").value(1))
-                .andExpect(jsonPath("$.data.days[0].primaryEmotion").value("기쁨"))
+                .andExpect(jsonPath("$.data.days[0].diaries[0].id").value(1))
+                .andExpect(jsonPath("$.data.days[0].diaries[0].primaryEmotion").value("기쁨"))
                 .andExpect(jsonPath("$.data.days[0].hasDiary").value(true))
                 .andExpect(jsonPath("$.data.days[1].hasDiary").value(false))
                 .andExpect(jsonPath("$.data.totalDiaries").value(1));
@@ -93,16 +96,16 @@ class CalendarControllerTest {
                 .build();
 
         given(calendarService.getDiaryByDate(isNull(), eq(date)))
-                .willReturn(response);
+                .willReturn(List.of(response));
 
         // when & then
         mockMvc.perform(get("/api/v1/calendar/{date}", date))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.id").value(1))
-                .andExpect(jsonPath("$.data.title").value("오늘의 일기"))
-                .andExpect(jsonPath("$.data.writtenAt").value("2026-04-08T21:00:00"))
-                .andExpect(jsonPath("$.data.primaryEmotion").value("기쁨"));
+                .andExpect(jsonPath("$.data[0].id").value(1))
+                .andExpect(jsonPath("$.data[0].title").value("오늘의 일기"))
+                .andExpect(jsonPath("$.data[0].writtenAt").value("2026-04-08T21:00:00"))
+                .andExpect(jsonPath("$.data[0].primaryEmotion").value("기쁨"));
     }
 
     @Test

@@ -155,7 +155,7 @@ class AiSafetyClientTest {
         return SafetyCheckRequest.builder()
                 .userId(1L)
                 .content(content)
-                .context(context)
+                .contextType(context)
                 .build();
     }
 }

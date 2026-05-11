@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChatResponse {
 
-    private String message;              // AI 응답 메시지
+    private String reply;                // ← message → reply , AI 응답 메시지
     private Boolean isSafetyTriggered;   // 안전 분기 트리거 여부
     private String safetyType;           // 안전 유형 (null이면 일반 응답)
     private Integer emotionScore;        // 감정 점수

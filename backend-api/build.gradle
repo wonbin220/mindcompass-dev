@@ -53,6 +53,9 @@ dependencies {
     // Jackson (LocalDate 등 Java 8 날짜 직렬화)
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
+
+
+
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'

@@ -91,7 +91,7 @@ class ChatServiceTest {
         SendMessageRequest request = createSendMessageRequest("오늘 하루가 너무 불안했어요");
         ChatMessage previousAssistantMessage = createMessage(10L, session, MessageRole.ASSISTANT, "어떤 일이 있었는지 말씀해 주세요", false, null);
         ChatResponse aiResponse = ChatResponse.builder()
-                .message("많이 불안하셨겠어요. 천천히 이야기해 볼까요?")
+                .reply("많이 불안하셨겠어요. 천천히 이야기해 볼까요?")
                 .build();
         AtomicLong messageIdSequence = new AtomicLong(1000L);
 
@@ -124,9 +124,9 @@ class ChatServiceTest {
         assertThat(chatRequest.getSessionId()).isEqualTo(sessionId);
         assertThat(chatRequest.getUserId()).isEqualTo(userId);
         assertThat(chatRequest.getUserMessage()).isEqualTo("오늘 하루가 너무 불안했어요");
-        assertThat(chatRequest.getHistory()).hasSize(1);
-        assertThat(chatRequest.getHistory().get(0).getRole()).isEqualTo("assistant");
-        assertThat(chatRequest.getHistory().get(0).getContent()).isEqualTo("어떤 일이 있었는지 말씀해 주세요");
+        assertThat(chatRequest.getConversationHistory()).hasSize(1);
+        assertThat(chatRequest.getConversationHistory().get(0).getRole()).isEqualTo("assistant");
+        assertThat(chatRequest.getConversationHistory().get(0).getContent()).isEqualTo("어떤 일이 있었는지 말씀해 주세요");
     }
 
     @Test

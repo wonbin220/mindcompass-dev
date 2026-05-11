@@ -81,7 +81,7 @@ public class AiChatClient {
 
     private ChatResponse createFallbackResponse() {
         return ChatResponse.builder()
-                .message(FALLBACK_MESSAGE)
+                .reply(FALLBACK_MESSAGE)
                 .isSafetyTriggered(false)
                 .build();
     }

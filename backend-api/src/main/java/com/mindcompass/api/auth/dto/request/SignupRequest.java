@@ -6,6 +6,7 @@ package com.mindcompass.api.auth.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,10 @@ public class SignupRequest {
 
     @NotBlank(message = "비밀번호는 필수입니다")
     @Size(min = 8, max = 20, message = "비밀번호는 8~20자여야 합니다")
+    @Pattern(
+            regexp = "^(?=.*[a-zA-Z])(?=.*\\d).{8,}$",
+            message = "비밀번호는 8자 이상, 영문+숫자 조합이어야 합니다"
+    )
     private String password;
 
     @NotBlank(message = "닉네임은 필수입니다")

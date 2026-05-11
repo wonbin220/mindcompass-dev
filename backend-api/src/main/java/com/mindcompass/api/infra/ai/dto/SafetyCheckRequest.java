@@ -13,5 +13,5 @@ public class SafetyCheckRequest {
 
     private final Long userId;
     private final String content;
-    private final String context; // "chat" or "diary"
+    private final String contextType;  // "CHAT" or "DIARY"
 }

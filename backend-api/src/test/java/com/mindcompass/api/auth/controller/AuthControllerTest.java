@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
@@ -66,8 +67,10 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.accessToken").value("accessToken"))
-                .andExpect(jsonPath("$.data.refreshToken").value("refreshToken"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("로그인 성공"))
+                .andExpect(cookie().httpOnly("access_token", true))
+                .andExpect(cookie().value("access_token", "accessToken"));
     }
 
     private SignupRequest createSignupRequest() {

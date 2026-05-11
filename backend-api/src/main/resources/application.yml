@@ -27,7 +27,7 @@ spring:
 
 # JWT 설정
 jwt:
-  secret: ${JWT_SECRET:your-256-bit-secret-key-for-development-only-change-in-production}
+  secret: ${JWT_SECRET}
   access-token-validity-ms: 3600000      # 1시간
   refresh-token-validity-ms: 604800000   # 7일
 
@@ -44,7 +44,7 @@ logging:
   level:
     root: INFO
     com.mindcompass.api: DEBUG
-    org.springframework.security: DEBUG
+    org.springframework.security: WARN
 
 # 서버 설정
 server:

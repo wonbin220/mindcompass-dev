@@ -8,6 +8,8 @@ import com.mindcompass.api.diary.domain.Diary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,4 +35,13 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
     // 특정 날짜 일기 수 (일일 제한 체크용)
     long countByUserIdAndWrittenAtBetweenAndDeletedAtIsNull(
             Long userId, LocalDateTime startDateTime, LocalDateTime endDateTime);
+
+    @Query("SELECT d FROM Diary d WHERE d.user.id = :userId " +
+            "AND d.deletedAt IS NULL " +
+            "AND (d.title LIKE %:keyword% OR d.content LIKE %:keyword%) " +
+            "ORDER BY d.writtenAt DESC")
+    Page<Diary> searchByKeyword(
+            @Param("userId") Long userId,
+            @Param("keyword") String keyword,
+            Pageable pageable);
 }

@@ -16,7 +16,7 @@ public class ChatRequest {
     private final Long sessionId;
     private final Long userId;
     private final String userMessage;
-    private final List<MessageHistory> history;
+    private final List<MessageHistory> conversationHistory;
 
     @Getter
     @Builder

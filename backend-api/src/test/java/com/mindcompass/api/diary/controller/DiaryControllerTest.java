@@ -98,7 +98,7 @@ class DiaryControllerTest {
                 PageRequest.of(0, 20),
                 2
         );
-        given(diaryService.getDiaries(isNull(), any()))
+        given(diaryService.getDiaries(isNull(), isNull(), any()))
                 .willReturn(page);
 
         // when & then

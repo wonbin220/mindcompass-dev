@@ -61,8 +61,9 @@ public class DiaryController {
     @GetMapping
     public ResponseEntity<ApiResponse<Page<DiaryListResponse>>> getDiaries(
             @CurrentUser Long userId,
+            @RequestParam(required = false) String keyword,
             @PageableDefault(size = 20) Pageable pageable) {
-        Page<DiaryListResponse> response = diaryService.getDiaries(userId, pageable);
+        Page<DiaryListResponse> response = diaryService.getDiaries(userId,keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

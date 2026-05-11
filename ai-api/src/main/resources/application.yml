@@ -29,9 +29,9 @@ management:
 # 로깅 설정
 logging:
   level:
-    root: INFO
-    com.mindcompass.ai: DEBUG
-    org.springframework.ai: INFO
+    root: WARN
+    com.mindcompass.api: INFO
+    org.springframework.security: WARN
 
 
 # FastAPI 모델 서버 설정

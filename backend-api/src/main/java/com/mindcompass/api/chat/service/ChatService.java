@@ -160,7 +160,7 @@ public class ChatService {
             SafetyCheckRequest request = SafetyCheckRequest.builder()
                     .userId(userId)
                     .content(content)
-                    .context("chat")
+                    .contextType("CHAT")
                     .build();
 
             return aiSafetyClient.checkSafety(request);
@@ -190,14 +190,14 @@ public class ChatService {
                     .sessionId(session.getId())
                     .userId(session.getUser().getId())
                     .userMessage(userContent)
-                    .history(history)
+                    .conversationHistory(history)
                     .build();
 
             ChatResponse response = aiChatClient.generateReply(request);
 
             return ChatMessage.assistantMessage(
                     session,
-                    response.getMessage() != null ? response.getMessage() : DEFAULT_FALLBACK_MESSAGE
+                    response.getReply() != null ? response.getReply() : DEFAULT_FALLBACK_MESSAGE
             );
 
         } catch (Exception e) {

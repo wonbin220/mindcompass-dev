@@ -80,7 +80,11 @@ public class DiaryService {
         return DiaryResponse.from(diary);
     }
 
-    public Page<DiaryListResponse> getDiaries(Long userId, Pageable pageable) {
+    public Page<DiaryListResponse> getDiaries(Long userId, String keyword, Pageable pageable) {
+        if (keyword != null && !keyword.isBlank()) {
+            return diaryRepository.searchByKeyword(userId, keyword.trim(), pageable)
+                    .map(DiaryListResponse::from);
+        }
         return diaryRepository.findByUserIdAndDeletedAtIsNullOrderByWrittenAtDesc(userId, pageable)
                 .map(DiaryListResponse::from);
     }
@@ -96,10 +100,6 @@ public class DiaryService {
         if (request.getPrimaryEmotion() != null || request.getEmotionIntensity() != null) {
             diary.updateUserEmotion(request.getPrimaryEmotion(), request.getEmotionIntensity());
             syncUserEmotionTag(diary);
-        }
-
-        if (request.getContent() != null || request.getTitle() != null) {
-            tryAnalyzeDiary(diary);
         }
 
         log.info("일기 수정 완료: diaryId={}", diaryId);

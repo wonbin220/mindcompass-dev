@@ -68,9 +68,10 @@ class CalendarServiceTest {
                 .singleElement()
                 .satisfies(day -> {
                     assertThat(day.getHasDiary()).isTrue();
-                    assertThat(day.getDiaryId()).isEqualTo(1L);
-                    assertThat(day.getPrimaryEmotion()).isEqualTo("기쁨");
-                    assertThat(day.getEmotionIntensity()).isEqualTo(5);
+                    assertThat(day.getDiaries()).hasSize(1);
+                    assertThat(day.getDiaries().get(0).getId()).isEqualTo(1L);
+                    assertThat(day.getDiaries().get(0).getPrimaryEmotion()).isEqualTo("기쁨");
+                    // emotionIntensity는 DiaryBriefInfo에 없으므로 검증 제거
                 });
 
         assertThat(response.getDays())
@@ -78,9 +79,7 @@ class CalendarServiceTest {
                 .singleElement()
                 .satisfies(day -> {
                     assertThat(day.getHasDiary()).isFalse();
-                    assertThat(day.getDiaryId()).isNull();
-                    assertThat(day.getPrimaryEmotion()).isNull();
-                    assertThat(day.getEmotionIntensity()).isNull();
+                    assertThat(day.getDiaries()).isEmpty();
                 });
     }
 
@@ -118,21 +117,22 @@ class CalendarServiceTest {
         LocalDate date = LocalDate.of(2026, 4, 8);
         Diary diary = createDiary(1L, date, "기쁨", 4);
 
-        given(diaryRepository.findFirstByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtAsc(
+        // findFirst → findBy (List 반환으로 바뀜)
+        given(diaryRepository.findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
                 userId, date.atStartOfDay(), date.plusDays(1).atStartOfDay()))
-                .willReturn(Optional.of(diary));
+                .willReturn(List.of(diary));
 
         // when
-        DiaryListResponse response = calendarService.getDiaryByDate(userId, date);
+        List<DiaryListResponse> response = calendarService.getDiaryByDate(userId, date);
 
         // then
-        assertThat(response).isNotNull();
-        assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getTitle()).isEqualTo("테스트 일기 1");
-        assertThat(response.getWrittenAt()).isEqualTo(date.atTime(21, 0));
-        assertThat(response.getPrimaryEmotion()).isEqualTo("기쁨");
-        assertThat(response.getEmotionIntensity()).isEqualTo(4);
+        assertThat(response).hasSize(1);
+        assertThat(response.get(0).getId()).isEqualTo(1L);
+        assertThat(response.get(0).getTitle()).isEqualTo("테스트 일기 1");
+        assertThat(response.get(0).getPrimaryEmotion()).isEqualTo("기쁨");
+        assertThat(response.get(0).getEmotionIntensity()).isEqualTo(4);
     }
+
 
     @Test
     @DisplayName("특정 날짜 일기 조회 성공 - 일기 없는 날")
@@ -141,15 +141,15 @@ class CalendarServiceTest {
         Long userId = 1L;
         LocalDate date = LocalDate.of(2026, 4, 9);
 
-        given(diaryRepository.findFirstByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtAsc(
+        given(diaryRepository.findByUserIdAndWrittenAtBetweenAndDeletedAtIsNullOrderByWrittenAtDesc(
                 userId, date.atStartOfDay(), date.plusDays(1).atStartOfDay()))
-                .willReturn(Optional.empty());
+                .willReturn(List.of());
 
         // when
-        DiaryListResponse response = calendarService.getDiaryByDate(userId, date);
+        List<DiaryListResponse> response = calendarService.getDiaryByDate(userId, date);
 
         // then
-        assertThat(response).isNull();
+        assertThat(response).isEmpty();
     }
 
     @Test

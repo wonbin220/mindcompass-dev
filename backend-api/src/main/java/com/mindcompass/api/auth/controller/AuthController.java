@@ -1,7 +1,7 @@
 // 파일: AuthController.java
 // 역할: 인증 관련 API 컨트롤러 — HttpOnly 쿠키 방식
 // 엔드포인트: /api/v1/auth/**
-// 화면: 회원가입, 로그인
+// 화면: 회원가입, 로그인, 로그아웃, 토큰갱신
 
 package com.mindcompass.api.auth.controller;
 
@@ -15,8 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.HttpHeaders;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -47,20 +48,27 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request,
             HttpServletResponse response) {
 
-        TokenResponse token = authService.login(request); 
+        TokenResponse token = authService.login(request);
 
-        Cookie accessCookie = new Cookie("access_token", token.getAccessToken());
-        accessCookie.setHttpOnly(true);
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(60 * 60);
+        // SameSite 지원을 위해 ResponseCookie 사용
+        ResponseCookie accessCookie = ResponseCookie.from("access_token", token.getAccessToken())
+                .httpOnly(true)
+                .path("/")
+                .maxAge(60 * 60)
+                .sameSite("Lax")       // ← CSRF 방어
+                .secure(false)          // ← 로컬은 false, 운영은 true
+                .build();
 
-        Cookie refreshCookie = new Cookie("refresh_token", token.getRefreshToken());
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setPath("/api/v1/auth/refresh");
-        refreshCookie.setMaxAge(60 * 60 * 24 * 7);
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", token.getRefreshToken())
+                .httpOnly(true)
+                .path("/api/v1/auth/refresh")
+                .maxAge(60 * 60 * 24 * 7)
+                .sameSite("Lax")
+                .secure(false)
+                .build();
 
-        response.addCookie(accessCookie);
-        response.addCookie(refreshCookie);
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         return ResponseEntity.ok(ApiResponse.success("로그인 성공"));
     }
@@ -83,35 +91,53 @@ public class AuthController {
 
         TokenResponse token = authService.refresh(refreshToken);
 
-        Cookie accessCookie = new Cookie("access_token", token.getAccessToken());
-        accessCookie.setHttpOnly(true);
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(60 * 60);
+        ResponseCookie accessCookie = ResponseCookie.from("access_token", token.getAccessToken())
+                .httpOnly(true)
+                .path("/")
+                .maxAge(60 * 60)
+                .sameSite("Lax")       // ← CSRF 방어
+                .secure(false)          // ← 로컬은 false, 운영은 true
+                .build();
 
-        response.addCookie(accessCookie);
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", token.getRefreshToken())
+                .httpOnly(true)
+                .path("/api/v1/auth/refresh")
+                .maxAge(60 * 60 * 24 * 7)
+                .sameSite("Lax")
+                .secure(false)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         return ResponseEntity.ok(ApiResponse.success("토큰 갱신 성공"));
     }
 
-    /**                                                                                                           [1/1971]
+    /**
      * 로그아웃
      * POST /api/v1/auth/logout
      * access_token, refresh_token 쿠키를 max-age=0으로 삭제
      */
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
-        Cookie accessCookie = new Cookie("access_token", "");
-        accessCookie.setHttpOnly(true);
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(0);
+        ResponseCookie accessCookie = ResponseCookie.from("access_token", "")
+                .httpOnly(true)
+                .path("/")
+                .maxAge(0)          // ← 0 = 브라우저가 즉시 쿠키 삭제
+                .sameSite("Lax")
+                .secure(false)
+                .build();
 
-        Cookie refreshCookie = new Cookie("refresh_token", "");
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setPath("/api/v1/auth/refresh");
-        refreshCookie.setMaxAge(0);
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .path("/api/v1/auth/refresh")
+                .maxAge(0)          // ← 0 = 즉시 삭제
+                .sameSite("Lax")
+                .secure(false)
+                .build();
 
-        response.addCookie(accessCookie);
-        response.addCookie(refreshCookie);
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         return ResponseEntity.ok(ApiResponse.success("로그아웃 완료"));
     }

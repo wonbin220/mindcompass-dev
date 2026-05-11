@@ -9,12 +9,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { api } from "@/lib/api";
 
+
 const navItems = [
     { href: "/calendar", label: "캘린더", icon: "📅" },
     { href: "/diary/new", label: "기록", icon: "📝" },
     { href: "/chat", label: "대화", icon: "💬" },
     { href: "/report", label: "리포트", icon: "📊" },
     { href: "/settings", label: "설정", icon: "⚙️ " },
+    { href: "/diary/search",  label: "검색",   icon: "🔍" },
 ];
 
 export default function AppNav() {
@@ -61,9 +63,7 @@ export default function AppNav() {
                 {/* 로그아웃 버튼 — 사이드바 맨 아래 */}
                 <button
                     onClick={handleLogout}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-50
-   hover:text-gray-600 transition-colors"
-                >
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors">
                     <LogOut className="w-4 h-4" />
                     <span>로그아웃</span>
                 </button>
@@ -77,11 +77,10 @@ export default function AppNav() {
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex-1 flex flex-col items-center justify-center py-3 text-xs font-medium transition-colors
-  ${
+                            className={`flex-1 flex flex-col items-center justify-center py-3 text-xs font-medium transition-colors 
+                            ${
                                 isActive ? "text-[#4A8EF0]" : "text-gray-400"
-                            }`}
-                        >
+                            }`}>
                             <span className="text-lg mb-0.5">{item.icon}</span>
                             <span>{item.label}</span>
                         </Link>
