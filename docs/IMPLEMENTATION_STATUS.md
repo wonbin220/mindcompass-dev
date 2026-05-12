@@ -4,6 +4,56 @@
 각 세션이 끝날 때 업데이트한다.
 
 ---
+## 2026-05-12 — backend-api 보안 강화 (전체 완료)
+
+### 완료
+
+#### HIGH 우선순위 (5개)
+- **Refresh Token 서버 revocation**: `RefreshTokenRepository` 신규 생성, `AuthService.login()` DB 저장, `AuthService.refresh()` Token Rotation 패턴, `AuthController.logout()` DB revoke 연결
+- **로그인 사용자 열거 공격 차단**: `ErrorCode.LOGIN_FAILED(401, A005)` 추가, `USER_NOT_FOUND`/`INVALID_PASSWORD` → `LOGIN_FAILED`로 통일
+- **LIKE 와일드카드 이스케이프**: `DiaryService.buildLikePattern()` 추가 (`%`, `_`, `!` 이스케이프), `DiaryRepository` 쿼리 `ESCAPE '!'` 적용, 키워드 2~50자 검증
+- **Cookie Secure flag 환경별 분리**: `app.cookie.secure` 프로퍼티 도입, 로컬은 false, 운영은 true
+- **JWT type claim 검증**: `JwtTokenProvider.getTokenType()` 추가, `JwtAuthenticationFilter`에서 `type != "access"` 차단
+
+#### MEDIUM 우선순위 (3개)
+- **JWT 필터 401 응답**: `SecurityConfig`에 `AuthenticationEntryPoint` 추가 — 미인증 요청 401 반환
+- **보안 응답 헤더**: `X-Frame-Options(DENY)`, `X-Content-Type-Options`, `HSTS(1년)`, `CSP` 추가
+- **CORS 환경변수 분리**: `CORS_ALLOWED_ORIGINS` 환경변수로 분리, `yourdomain.com` 하드코딩 제거
+
+#### LOW 우선순위 (4개)
+- **PII 로그 제거**: `AuthService.signup()` 로그에서 `email={}` → `userId={}` 교체
+- **Bearer strip 코드 제거**: `AuthService.refresh()` 불필요한 `.replace("Bearer ", "")` 이미 제거됨
+- **format_sql 공통 프로필 제거**: 운영 환경 로그 볼륨 최적화
+- **refresh token 24시간 단축**: 604800000ms(7일) → 86400000ms(24시간), 쿠키 maxAge 동기화
+
+#### 배포 전 필수 (3개)
+- **CORS 환경변수**: `CORS_ALLOWED_ORIGINS` 환경변수로 분리 완료
+- **JWT_SECRET 기본값 없음**: `${JWT_SECRET}` (fallback 없음) 미설정 시 서버 시작 실패
+- **Rate Limiting**: `LoginRateLimitFilter` 신규 생성 — 로그인 1분 10회 초과 시 429 반환 (bucket4j 8.10.1)
+
+#### 주석/문서
+- 모든 수정 파일에 WHY 주석 추가
+- `AGENTS.md` 함수 주석 규칙 및 코드 직접 확인 원칙 추가
+
+### 변경된 파일
+- `backend-api/.../auth/domain/RefreshToken.java` (revoke/isRevoked 추가)
+- `backend-api/.../auth/repository/RefreshTokenRepository.java` (신규)
+- `backend-api/.../auth/service/AuthService.java` (login/refresh/logout 전면 수정)
+- `backend-api/.../auth/controller/AuthController.java` (logout revoke, cookieSecure 주입)
+- `backend-api/.../common/exception/ErrorCode.java` (LOGIN_FAILED 추가)
+- `backend-api/.../diary/service/DiaryService.java` (LIKE 이스케이프)
+- `backend-api/.../diary/repository/DiaryRepository.java` (ESCAPE '!' 쿼리)
+- `backend-api/.../common/security/SecurityConfig.java` (헤더, 401, CORS 환경변수)
+- `backend-api/.../common/security/JwtTokenProvider.java` (getTokenType)
+- `backend-api/.../common/security/JwtAuthenticationFilter.java` (type 검증)
+- `backend-api/.../common/security/LoginRateLimitFilter.java` (신규)
+- `backend-api/src/main/resources/application.yml` (쿠키/CORS/format_sql/refresh-token 설정)
+- `backend-api/build.gradle` (bucket4j-core:8.10.1 추가)
+- `AGENTS.md` (코드 직접 확인 원칙, 함수 주석 규칙 추가)
+- `CLAUDE.md` (코드 직접 확인 원칙 추가)
+
+---
+
 ## 2026-05-08 — 프론트엔드 인증/UX 개선
 
 ### 완료

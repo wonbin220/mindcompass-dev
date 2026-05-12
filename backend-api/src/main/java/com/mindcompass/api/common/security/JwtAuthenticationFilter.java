@@ -42,10 +42,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(token)) {
             try {
-                if (jwtTokenProvider.validateToken(token)) {
+                jwtTokenProvider.validateToken(token);
+
+                // refresh token을 access token 자리에 사용하는 공격을 차단한다.
+                // 두 토큰은 서명이 같아 validateToken()만으로는 구분할 수 없다.
+                // type claim이 "access"가 아니면 인증을 거부한다.
+                String tokenType = jwtTokenProvider.getTokenType(token);
+                if (!"access".equals(tokenType)) {
+                    log.warn("잘못된 토큰 타입으로 인증 시도: type={}", tokenType);
+                } else {
                     Long userId = jwtTokenProvider.getUserId(token);
 
-                    // 인증 객체 생성 (권한은 기본 USER로 설정)
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     userId,

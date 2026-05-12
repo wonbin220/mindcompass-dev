@@ -73,6 +73,13 @@ public class JwtTokenProvider {
         return Long.parseLong(claims.getSubject());
     }
 
+    // 토큰의 type claim을 반환한다. access 토큰인지 refresh 토큰인지 구분하기 위해 사용한다.
+    // refresh token을 access token 자리에 넣으면 서명은 통과하지만 type이 "refresh"라 걸러낼 수 있다.
+    public String getTokenType(String token) {
+        Claims claims = parseClaims(token);
+        return claims.get("type", String.class);
+    }
+
     // 토큰 유효성 검증
     public boolean validateToken(String token) {
         try {

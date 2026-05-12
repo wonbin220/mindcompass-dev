@@ -15,7 +15,8 @@ spring:
       ddl-auto: validate  # 운영에서는 validate, 개발은 프로필에서 오버라이드
     properties:
       hibernate:
-        format_sql: true
+        # format_sql은 로컬 개발 전용이라 공통 프로필에서 제거한다.
+        # 운영 환경에서 format_sql: true이면 SQL이 보기 좋게 포맷돼서 로그 볼륨이 커진다.
         default_batch_fetch_size: 100
     open-in-view: false  # 성능을 위해 비활성화
 
@@ -29,7 +30,21 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
   access-token-validity-ms: 3600000      # 1시간
-  refresh-token-validity-ms: 604800000   # 7일
+  # 7일(604800000)에서 24시간(86400000)으로 단축한다.
+  # 탈취된 refresh token의 유효 기간을 줄여 피해 범위를 좁히기 위해서다.
+  # Token Rotation 도입으로 정상 사용자는 자동 갱신되므로 UX 영향은 최소화된다.
+  refresh-token-validity-ms: 86400000    # 24시간
+
+# 쿠키 설정
+# secure: true → HTTPS에서만 쿠키 전송 (운영/개발 서버 기본값)
+# local 프로필에서만 false로 오버라이드한다. HTTP 로컬 환경에서도 쿠키가 동작하게 하기 위해서다.
+app:
+  cookie:
+    secure: true
+  cors:
+    # 허용할 Origin 목록. 운영/개발에서는 CORS_ALLOWED_ORIGINS 환경변수로 주입한다.
+    # 환경변수 미설정 시 로컬 기본값(localhost:3000)만 허용한다.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
 # AI API 설정
 ai:
@@ -84,6 +99,13 @@ spring:
 ai:
   api:
     enabled: false
+
+# 로컬은 HTTP이므로 Secure 쿠키를 false로 오버라이드한다
+app:
+  cookie:
+    secure: false
+  cors:
+    allowed-origins: http://localhost:3000
 
 ---
 # 파일: application-dev.yml

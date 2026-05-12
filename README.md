@@ -136,12 +136,42 @@ Responsive Web → backend-api → ai-api → ai-api-fastapi
 
 이렇게 해서 AI 장애가 기록 손실로 이어지지 않도록 했습니다.
 
+### 4. Security Design
+
+인증 흐름 전반에 아래 보안 결정을 적용했습니다.
+
+**Token Rotation (Refresh Token Revocation)**
+
+단순히 JWT 서명만 검증하면 탈취된 refresh token으로 무기한 access token을 재발급받을 수 있습니다.
+발급한 refresh token의 SHA-256 해시를 DB에 저장하고, 갱신 시마다 기존 토큰을 폐기(soft delete)한 뒤 새 토큰을 발급합니다.
+로그아웃 시에도 서버 측에서 해당 사용자의 모든 refresh token을 폐기합니다.
+
+**User Enumeration 방지**
+
+이메일 미존재와 비밀번호 불일치를 다른 에러 코드로 구분하면 공격자가 유효한 이메일을 식별할 수 있습니다.
+두 경우 모두 `LOGIN_FAILED(401)`로 통일해 정보를 노출하지 않습니다.
+
+**JWT type claim 검증**
+
+access token과 refresh token은 같은 키로 서명되므로 `validateToken()`만으로는 구분할 수 없습니다.
+모든 토큰에 `type: access | refresh` claim을 부여하고, 인증 필터에서 `type != "access"`이면 인증을 거부합니다.
+
+**Rate Limiting**
+
+로그인 엔드포인트에 IP 기반 bucket4j 필터를 적용해 1분에 10회를 초과하면 429를 반환합니다.
+Spring Security 필터보다 먼저 실행되어 브루트포스 시 DB 조회 자체를 차단합니다.
+
+**HttpOnly Cookie + Secure flag**
+
+JWT를 `localStorage`가 아닌 HttpOnly 쿠키로 전달해 XSS를 통한 토큰 탈취를 방어합니다.
+`Secure` flag는 환경별로 분리해 로컬은 HTTP, 운영은 HTTPS 전용으로 설정합니다.
+
 ---
 
 ## Implemented Scope
 
 ### backend-api
-- Auth: `POST /signup`, `POST /login`, `POST /refresh`
+- Auth: `POST /signup`, `POST /login`, `POST /refresh`, `POST /logout`
 - User: `GET /users/me`
 - Diary: `POST`, `GET /{id}`, `PATCH /{id}`, `DELETE /{id}`, `GET ?date=`
 - Calendar: `GET /monthly-emotions`, `GET /daily-summary`

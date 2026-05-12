@@ -82,11 +82,29 @@ public class DiaryService {
 
     public Page<DiaryListResponse> getDiaries(Long userId, String keyword, Pageable pageable) {
         if (keyword != null && !keyword.isBlank()) {
-            return diaryRepository.searchByKeyword(userId, keyword.trim(), pageable)
+            String trimmed = keyword.trim();
+
+            // % 한 글자만 보내도 LIKE %%가 돼서 전 row를 스캔하는 DoS가 가능하다.
+            // 최소 2자 이상이어야 인덱스를 타고, 50자 초과는 의미 없는 요청으로 본다.
+            if (trimmed.length() < 2 || trimmed.length() > 50) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+            }
+
+            return diaryRepository.searchByKeyword(userId, buildLikePattern(trimmed), pageable)
                     .map(DiaryListResponse::from);
         }
         return diaryRepository.findByUserIdAndDeletedAtIsNullOrderByWrittenAtDesc(userId, pageable)
                 .map(DiaryListResponse::from);
+    }
+
+    // LIKE 와일드카드 문자(%, _)와 이스케이프 문자(!)를 이스케이프한 뒤 % 래핑한다.
+    // 예) "50%_할인" → "%50!%!_할인%" (ESCAPE '!' 기준)
+    private String buildLikePattern(String keyword) {
+        String escaped = keyword
+                .replace("!", "!!")
+                .replace("%", "!%")
+                .replace("_", "!_");
+        return "%" + escaped + "%";
     }
 
     @Transactional

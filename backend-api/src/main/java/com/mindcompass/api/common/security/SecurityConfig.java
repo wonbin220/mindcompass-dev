@@ -4,7 +4,9 @@
 
 package com.mindcompass.api.common.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,10 +30,15 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    // CORS_ALLOWED_ORIGINS 환경변수로 허용 도메인을 주입한다.
+    // 미설정 시 localhost:3000만 허용 (로컬 기본값). 콤마로 여러 도메인 지정 가능.
+    @Value("${app.cors.allowed-origins}")
+    private List<String> allowedOrigins;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // CSRF 비활성화 (JWT 사용으로 불필요)
+                // CSRF 비활성화 (JWT + HttpOnly 쿠키 방식 사용)
                 .csrf(AbstractHttpConfigurer::disable)
 
                 // CORS 설정
@@ -43,12 +50,38 @@ public class SecurityConfig {
 
                 // 엔드포인트별 인가 설정
                 .authorizeHttpRequests(auth -> auth
-                        // 인증 불필요
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/health").permitAll()
                         .requestMatchers("/error").permitAll()
-                        // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
+                )
+
+                // 인증 실패 시 403 대신 401을 반환한다.
+                // 기본 설정은 인증 안 된 요청도 403(AccessDeniedException)으로 내보내는데,
+                // 401(Unauthorized)과 403(Forbidden)을 혼용하면 클라이언트가 원인을 구분하기 어렵다.
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint((request, response, ex) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"success\":false,\"message\":\"인증이 필요합니다\"}");
+                        })
+                )
+
+                // 보안 응답 헤더 설정
+                // X-Frame-Options: 클릭재킹 방지
+                // X-Content-Type-Options: MIME 스니핑 방지
+                // HSTS: HTTPS 강제 (브라우저가 이후 요청도 자동으로 HTTPS로 전환)
+                // CSP: 허용된 소스에서만 리소스 로드, frame-ancestors로 iframe 삽입 차단
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.deny())
+                        .contentTypeOptions(contentType -> {})
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000)
+                        )
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives("default-src 'self'; frame-ancestors 'none'")
+                        )
                 )
 
                 // JWT 필터 추가
@@ -66,9 +99,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // TODO: 프로덕션에서는 허용 도메인을 제한해야 함
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://yourdomain.com"));
+        // 하드코딩 제거 — application.yml의 app.cors.allowed-origins 또는 CORS_ALLOWED_ORIGINS 환경변수로 관리한다
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
