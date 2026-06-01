@@ -28,6 +28,7 @@
 | `CHAT_FRONTEND_LEARNING.md` | Next.js 채팅 구현 시 배운 것들 |
 | `FRONTEND_PAGES_LEARNING.md` | 캘린더, 일기, 리포트 페이지 구현 패턴 | 
 | `DIARY_SEARCH_LEARNING.md` | 일기 키워드 검색 API 및 테스트 회귀 수정 이유 |
+| `CI_CD_DEPLOYMENT_LEARNING.md` | GitHub Actions + ECR + ECS CI/CD 배포 과정 및 트러블슈팅 |
 
 
 ### AI API 학습 문서 (`ai-api/`)
@@ -40,7 +41,6 @@
 | `ai-api/RISK_SCORE_API_LEARNING.md` | 위험도 점수 API |
 | `ai-api/GENERATE_REPLY_API_LEARNING.md` | AI 답변 생성 API |
 | `ai-api/RAG_CONTEXT_API_LEARNING.md` | RAG 문맥 검색 API |
-
 ---
 
 ## 문서들의 목적
