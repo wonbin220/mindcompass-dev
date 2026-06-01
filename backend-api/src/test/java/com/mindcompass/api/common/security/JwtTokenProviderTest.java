@@ -96,7 +96,7 @@ class JwtTokenProviderTest {
     @DisplayName("서명이 조작된 토큰은 BusinessException을 던진다")
     void validateToken_tamperedToken() {
         // given - 헤더와 페이로드는 유효하나 서명이 위조된 토큰
-        String tamperedToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.invalid_signature_here";
+        String tamperedToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.invalid_signature_here"; // gitleaks:allow
 
         // when & then
         assertThatThrownBy(() -> jwtTokenProvider.validateToken(tamperedToken))

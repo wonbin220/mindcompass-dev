@@ -3,7 +3,7 @@
 // 역할: 로그인 페이지 (인증 없이 접근 가능)
 // 호출: POST /api/v1/auth/login → backend-api
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,16 +26,12 @@ export default function LoginPage() {
     setErrorMessage("");
 
     try {
-      // 백엔드가 Set-Cookie로 access_token, refresh_token을 심어줌
-      // 응답 body에 토큰 없음 → 제네릭 타입 void
       await api.post<void>(
           "/api/v1/auth/login",
           { email, password },
           { skipAuth: true }
       );
 
-      // open redirect 방어: "/"로 시작하고 "//"로 시작하지 않는 경로만 허용
-      // 변경: from 파라미터가 있으면 거기로, 없으면 홈으로
       const from = searchParams.get("from") || "/";
       const safePath = from.startsWith("/") && !from.startsWith("//") ? from : "/";
       router.push(safePath);
@@ -46,7 +42,7 @@ export default function LoginPage() {
     }
   }
 
-  return (
+return (                                                                                                   
       <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <Card className="w-full max-w-sm shadow-sm">
           <CardHeader className="text-center pb-2">
@@ -106,4 +102,10 @@ export default function LoginPage() {
   );
 }
 
-
+ export default function LoginPage() {
+    return (
+        <Suspense>
+          <LoginForm />
+        </Suspense>
+    );
+  }

@@ -2,13 +2,22 @@
 # 역할: tired_v5(TIRED 전담) + Seonghaa roberta(나머지 5개 감정) 앙상블
 # 호출: app/services/emotion_service.py -> HybridPredictor
 
+import os  # ← 파일 상단에 추가
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 
 from app.inference.base_predictor import BasePredictor
 
-TIRED_MODEL_PATH = "training/emotion_classifier/artifacts/tired_v5/best"
-LIMYERI_MODEL_PATH = "training/emotion_classifier/artifacts/limyeri"
+
+
+TIRED_MODEL_PATH = os.environ.get(
+    "TIRED_MODEL_PATH",
+    "training/emotion_classifier/artifacts/tired_v5/best"  # 로컬 개발용 fallback
+)
+LIMYERI_MODEL_PATH = os.environ.get(
+    "LIMYERI_MODEL_ID",
+    "LimYeri/HowRU-KoELECTRA-Emotion-Classifier"  # HF Hub ID
+)
 TIRED_THRESHOLD = 0.6
 
 EMOTION_LABELS = ["happy", "calm", "anxious", "sad", "angry", "tired"]
