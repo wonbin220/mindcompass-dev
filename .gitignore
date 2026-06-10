@@ -71,3 +71,13 @@ credentials.json
 *.pkl
 *.safetensors
 models/
+
+# ===== ML Training Artifacts (대용량 실험 산출물: S3 백업, git 제외) =====
+# best 모델은 s3://mindcompass-models/training-artifacts 에 백업, 운영 모델은 S3 models/ 에 보관
+ai-api-fastapi/training/emotion_classifier/artifacts/
+ai-api-fastapi/training/emotion_classifier/processed/
+
+# ===== 가상환경 / 임시 파일 =====
+.venv-app/
+ai-api-fastapi/.venv-app/
+.codex

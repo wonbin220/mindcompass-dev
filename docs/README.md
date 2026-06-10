@@ -29,6 +29,12 @@
 | `FRONTEND_PAGES_LEARNING.md` | 캘린더, 일기, 리포트 페이지 구현 패턴 | 
 | `DIARY_SEARCH_LEARNING.md` | 일기 키워드 검색 API 및 테스트 회귀 수정 이유 |
 | `CI_CD_DEPLOYMENT_LEARNING.md` | GitHub Actions + ECR + ECS CI/CD 배포 과정 및 트러블슈팅 |
+| `ALB_CLOUDFRONT_DEPLOYMENT_LEARNING.md` | ALB → CloudFront 외부 노출 배포, 헬스체크 3중 문제·서비스 재생성·HTTPS 구성 트러블슈팅 |
+| `SECURITY_HARDENING_LEARNING.md` | RDS 비공개화 + 시크릿 SSM Parameter Store 이전(평문 제거), IAM/KMS 권한·트러블슈팅 |
+| `PRE_DEMO_REVIEW.md` | 데모 전 보안/아키텍처 점검 리포트 (심각도별 발견·조치 현황·자원해제 체크리스트) |
+| `AI_CHAIN_SERVICE_DISCOVERY_LEARNING.md` | backend→ai-api→fastapi 내부 체인을 Cloud Map private DNS로 연결 (Fargate localhost 문제·서비스 재생성·E2E 검증) |
+| `DEMO_RECORDING_GUIDE.md` | 시연 영상 촬영 순서/대본 (아키텍처→웹→내부 증명, 촬영 팁) |
+| `TEARDOWN_RUNBOOK.md` | 자원 해제 런북 (촬영 후 실행, CloudFront→ECS→ALB→RDS 순서·명령어) |
 
 
 ### AI API 학습 문서 (`ai-api/`)

@@ -4,6 +4,140 @@
 각 세션이 끝날 때 업데이트한다.
 
 ---
+## Session Handoff - 2026-06-11 — 데모 전 보안 강화 + AI 내부 체인 연결 + 데모 준비
+
+### 보안 강화 (데모 전 점검에서 발견·조치)
+- **RDS 비공개화**: SG에서 `0.0.0.0/0` 제거 + backend SG만 허용, `PubliclyAccessible=false`
+- **시크릿 SSM 이전**: OpenAI 키/JWT 시크릿/DB 비번 3개 교체 후 SSM Parameter Store(SecureString)로 이전,
+  task-def `environment` 평문 → `secrets`(valueFrom), 실행역할에 `ssm:GetParameters`+`kms:Decrypt` 부여
+- **web-app SG**: `0.0.0.0/0` → ALB SG만 허용 (CloudFront 우회 차단)
+- **CORS**: localhost → CloudFront 도메인
+- **잔재 정리**: ap-northeast-2 미사용·공개 RDS(`mindcompass-db`) 삭제
+
+### AI 내부 체인 연결 (backend→ai-api→fastapi)
+- 문제: Fargate에서 `localhost`는 자기 자신 → 서비스 간 호출 불가 + backend AI 비활성
+- 해결: **Cloud Map private DNS**(`mindcompass.local`) — CLI v1이 Service Connect 미지원이라 채택
+  - Cloud Map 서비스 2개 생성, ai-api·fastapi를 `--service-registries`로 재생성
+  - backend `AI_API_ENABLED=true`+`AI_API_BASE_URL=http://ai-api.mindcompass.local:8081`,
+    ai-api `FASTAPI_BASE_URL=http://ai-api-fastapi.mindcompass.local:8090`
+- **E2E 검증**: 일기 생성 → fastapi 감정분류("피로") + ai-api 위험도(LOW) + OpenAI 요약(실제 한국어) 동작
+
+### 데모 준비
+- 데모 계정 + 일기 19개 시드(불규칙 패턴, 우울 위주) → 캘린더/리포트 화면 채움
+- 촬영 가이드 / 자원 해제 런북 작성
+
+### 알려진 한계
+- AI 분석기가 `emotionIntensity`(감정 강도) 미산출 → 리포트 점수 추이선이 평탄(0). 분포·대표감정은 정상.
+- AWS CLI v1(1.22.34)이라 `update-service --load-balancers`, Service Connect 미지원 → 재생성/Cloud Map 우회
+- #6(private subnet+NAT), #7(커스텀 도메인/ACM)은 비용·도메인 사유로 데모 후로 보류
+
+### 상세 문서
+- `docs/PRE_DEMO_REVIEW.md`(점검·조치현황·자원해제 체크리스트), `docs/DEMO_RECORDING_GUIDE.md`, `docs/TEARDOWN_RUNBOOK.md`
+- 학습 문서(로컬, `*_LEARNING.md` gitignore): SECURITY_HARDENING, AI_CHAIN_SERVICE_DISCOVERY, ALB_CLOUDFRONT_DEPLOYMENT
+
+---
+## Session Handoff - 2026-06-10 (3) — CloudFront 배포 (인프라 7/7 완성)
+
+### 완료: CloudFront로 프론트 CDN + API 라우팅 (HTTPS)
+- Distribution `E3TJFNTQQG9YQZ` → **`d1a0tnqx5al2eh.cloudfront.net`**
+- 검증: `https://d1a0tnqx5al2eh.cloudfront.net/login` 200, `/api/v1/health` 200, `http://`→301(HTTPS 리다이렉트)
+- 전파(InProgress→Deployed) 약 2.5분 소요
+
+### 구조
+- CloudFront(엣지 HTTPS) → ALB(HTTP :80) → 경로 분기
+  - `/api/*` → backend-tg(8080), default → webapp-tg(3000)
+- CloudFront: 단일 ALB origin, CachingDisabled + AllViewer(쿠키/전체 헤더 전달) → 인증 안전, 경로 분기는 ALB가 담당
+- viewer-protocol redirect-to-https, origin-protocol http-only(ALB에 HTTPS 리스너 없음)
+
+### 선행 작업: web-app을 ALB 뒤에 연결
+- web-app 타겟그룹 생성(3000, 헬스 매처 200-399 — Next.js 루트가 /login·/calendar로 307 리다이렉트하므로 2xx-3xx 허용)
+- ALB 리스너 규칙 추가: priority 10 `/api/*`→backend, default→webapp
+- **web-app-service 재생성**: AWS CLI v1(1.22.34)은 `update-service --load-balancers` 미지원 → 서비스 삭제 후 LB 연결 상태로 재생성. 동시에 서브넷 1a/1b 제한 + grace 180 선제 적용(backend 교훈 반영)으로 크래시 루프 회피. web-app은 50초 만에 healthy.
+
+### 인프라 현황: 7/7 완료
+GitHub Actions, Docker, ECR, ECS(Fargate), RDS, ALB, CloudFront 모두 완료.
+
+### 다음 작업 (선택/개선)
+- 커스텀 도메인 + ACM 인증서(현재는 *.cloudfront.net 기본 도메인)
+- 정적 자산(`/_next/static/*`) 캐싱 behavior 추가로 CDN 효과 강화(현재는 전체 CachingDisabled)
+- HealthyThresholdCount 5→2~3으로 backend 배포 시간 단축
+- ap-northeast-2 중복 `mindcompass-cluster` 정리 여부 확인
+- 워크트리 stray 파일 `ai-api-fastapi/=1.1.0` 삭제
+
+### 변경된 리소스 (AWS, 코드 아님)
+- CloudFront distribution E3TJFNTQQG9YQZ (신규)
+- ALB 리스너 규칙(/api/*), web-app 타겟그룹(신규), web-app-service 재생성
+
+---
+## Session Handoff - 2026-06-10 (2) — ALB 연결 + backend-api 헬스체크 (us-east-1, 완료)
+
+### 완료: ALB 뒤 backend-api 정상화 (HTTP 200)
+- `mindcompass-alb`(us-east-1) → `mindcompass-backend-tg`(8080) → backend-api-service 트래픽 정상
+- 최종 확인: `http://mindcompass-alb-1628514968.us-east-1.elb.amazonaws.com/api/v1/health` → 200 `{"data":{"status":"UP"},"success":true}`
+
+### 해결한 3중 문제 (타겟 unhealthy → healthy)
+1. **헬스 엔드포인트 부재**: SecurityConfig는 `/api/v1/health`를 permitAll로 열어뒀으나 매핑 컨트롤러가 없어 404 → ALB가 200 기대 → `Target.ResponseCodeMismatch`
+   - `HealthController` 추가 (얕은 체크, DB 비의존), 커밋 `900f7f2` → CI/CD 자동 배포
+   - ALB 헬스체크 경로 `/` → `/api/v1/health`
+2. **서브넷/AZ 불일치**: ECS 서비스가 6개 서브넷(1a/b/c/d/e/f) 사용, ALB는 1a/1b만 활성 → 태스크가 1c/d/e/f에 뜨면 `unused`(Target.NotInUse) → 영영 healthy 안 됨 → 503
+   - `aws ecs update-service --network-configuration` 으로 서브넷을 ALB AZ(1a/1b) 2개로 제한
+3. **healthCheckGracePeriodSeconds=0**: Spring Boot 부팅 48초인데 grace 0 + UnhealthyThreshold 2×30초=60초 → 부팅 직후 unhealthy 판정 → ECS가 SIGTERM(143)으로 죽임 → 크래시 루프
+   - grace period `0 → 300초` (`aws ecs update-service --health-check-grace-period-seconds 300`)
+
+### 배운 점 (재발 방지)
+- ALB 뒤 ECS 서비스의 서브넷은 **ALB가 활성화한 AZ로 한정**해야 한다 (안 그러면 일부 태스크가 unused로 방치)
+- 헬스체크 grace period는 **앱 부팅 시간 + healthy 안정화 시간(HealthyThreshold×interval)** 보다 커야 한다. backend-api는 부팅 48초 + 5×30초=150초 → 최소 200초 필요
+- rtk가 `aws ... ls`/describe 긴 출력을 잘라 `grep -c` 검증이 과소 집계됨 → 정확 카운트는 전체 로그/`--query length(...)` 사용
+
+### 다음 작업
+- CloudFront: web-app CDN + `/api/**` → ALB 라우팅 (인프라 7개 중 마지막)
+- (선택) HealthyThresholdCount 5→2~3으로 낮춰 배포 시간 단축
+- ai-api/ai-api-fastapi/web-app 서비스도 같은 서브넷/grace 이슈 없는지 점검
+
+### 변경된 파일/리소스
+- `backend-api/.../common/health/HealthController.java` (신규, 커밋 `900f7f2`)
+- AWS: TG 헬스체크 경로, backend-api-service 서브넷·grace period (콘솔/CLI 변경, 코드 아님)
+
+---
+## Session Handoff - 2026-06-10 — ML 모델 S3 백업 + ai-api-fastapi Docker 검증
+
+### 완료
+
+#### best 실험 모델 S3 백업
+- `artifacts/` 70GB 중 **best 모델만** `s3://mindcompass-models/training-artifacts/` 에 백업
+- 필터: `--exclude "*" --include "*/best/*"` (checkpoint-*, *.pt, Zone.Identifier, .omc 제외) → 대상 20.8GB
+- 검증: 로컬 `best/` 파일 341개 = S3 341개, `best/model.safetensors` 51개 = S3 51개 (sync exit 0)
+- 운영 모델 경로 `s3://mindcompass-models/models/tired_v5/` 는 별개로 이미 존재 (2026-06-01 업로드)
+
+#### .gitignore 정리
+- ML artifacts/processed git 제외 추가 (대용량 실험 산출물은 S3 백업)
+- 리다이렉트 사고로 끼어든 `=1.1.0` 오타 줄 삭제
+
+#### ai-api-fastapi Docker build 테스트 (end-to-end 통과)
+- `docker build -t mindcompass-fastapi:test ./ai-api-fastapi` → exit 0
+- 전략 검증: **모델 없는 이미지 + 시작 시 모델 다운로드**가 실제 동작함
+  - start.sh가 S3에서 tired_v5(436MB) 다운로드 ✅
+  - LimYeri를 HF Hub에서 캐시 ✅ (비인증 요청이라 ~5분 소요)
+  - `/health` → `{"status":"ok"}` ✅
+  - 실제 감정분류: "지치고 피곤해서..." → tired 0.990, "행복하고 즐거웠어요" → happy 0.999 ✅
+
+### 발견한 잠재 취약점 (다음 작업 후보)
+- **이미지가 실행 방식에 의존**: 앱은 `TIRED_MODEL_PATH` env가 있어야 정상. compose는 `/app/models/tired_v5`를 주입하지만, `docker run --env-file .env` 로 맨몸 실행 시 누락 → 앱이 로컬 개발용 상대경로(`training/.../tired_v5/best`)로 폴백 → transformers가 HF repo id로 오인 → 500
+- **권장 수정**: `ai-api-fastapi/Dockerfile` 에 `ENV TIRED_MODEL_PATH=/app/models/tired_v5` 추가 → 어떤 실행 방식에서도 자체적으로 올바른 경로 사용
+
+### 다음 작업
+- (선택) Dockerfile에 `TIRED_MODEL_PATH` 기본값 추가 후 재빌드 검증
+- ECS 배포: 4개 서비스 RUNNING 이후 ALB → CloudFront
+
+### 변경된 파일
+- `.gitignore` (artifacts 제외 + 오타 줄 정리)
+- `docs/IMPLEMENTATION_STATUS.md` (이 항목)
+
+### 주의사항
+- rtk가 `aws s3 ls` 출력을 잘라서(`+N more items`) `grep -c` 검증 시 과소 집계됨 → 정확 카운트는 `~/.local/share/rtk/tee/*_aws_s3_ls.log` 전체 로그로 세야 함
+- best 백업(`training-artifacts/`)과 운영 모델(`models/tired_v5/`)은 **다른 prefix** — docker 런타임은 후자를 받음
+
+---
 ## 2026-05-12 — backend-api 보안 강화 (전체 완료)
 
 ### 완료
