@@ -35,6 +35,7 @@
 | `AI_CHAIN_SERVICE_DISCOVERY_LEARNING.md` | backend→ai-api→fastapi 내부 체인을 Cloud Map private DNS로 연결 (Fargate localhost 문제·서비스 재생성·E2E 검증) |
 | `DEMO_RECORDING_GUIDE.md` | 시연 영상 촬영 순서/대본 (아키텍처→웹→내부 증명, 촬영 팁) |
 | `TEARDOWN_RUNBOOK.md` | 자원 해제 런북 (촬영 후 실행, CloudFront→ECS→ALB→RDS 순서·명령어) |
+| `DEMO_PREP_BUGFIX_LEARNING.md` | 데모 리허설 중 발견한 버그 5개(로그인 localStorage·useSearchParams·AI 타임아웃·감정 반영·fastapi 500) 원인·수정·대안·예방 기록 |
 
 
 ### AI API 학습 문서 (`ai-api/`)
