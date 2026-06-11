@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 // 파일: app/(app)/diary/page.tsx
 // 역할: 날짜별 일기 목록 페이지
 // 호출: GET /api/v1/calendar/{date} → 해당 날짜의 일기 목록

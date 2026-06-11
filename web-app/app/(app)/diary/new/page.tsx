@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 // 파일: app/(app)/diary/new/page.tsx
 // 역할: 일기 작성 페이지
 // 호출: POST /api/v1/diaries → backend-api
