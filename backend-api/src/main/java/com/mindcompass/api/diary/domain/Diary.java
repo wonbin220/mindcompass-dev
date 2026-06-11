@@ -92,6 +92,14 @@ public class Diary {
         this.emotionIntensity = emotionIntensity;
     }
 
+     // AI 분석 감정을 대표 감정으로 반영한다. 사용자가 직접 고른 감정이 있으면 덮어쓰지 않는다.
+    public void applyAiEmotionIfAbsent(String primaryEmotion, Integer emotionIntensity) {
+        if (this.primaryEmotion == null || this.primaryEmotion.isBlank()) {
+            this.primaryEmotion = primaryEmotion;
+            this.emotionIntensity = emotionIntensity;
+        }
+    }
+
     public void addEmotionTag(DiaryEmotionTag emotionTag) {
         this.emotionTags.add(emotionTag);
     }

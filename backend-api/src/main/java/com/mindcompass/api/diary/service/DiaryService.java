@@ -182,6 +182,10 @@ public class DiaryService {
         diaryAiAnalysisRepository.save(aiAnalysis);
         syncAiEmotionTag(diary, response);
 
+//        사용자가 감정을 직접 고르지 않았으면 AI 분류 감정을 대표 감정으로 채운다 (캘린더/목록 이모지 표시용)
+        diary.applyAiEmotionIfAbsent(response.getPrimaryEmotion(), response.getEmotionIntensity());
+
+
         log.info("AI 분석 결과 적용: diaryId={}, emotion={}",
                 diary.getId(), response.getPrimaryEmotion());
     }
