@@ -34,7 +34,7 @@ function LoginForm() {
 
       const from = searchParams.get("from") || "/";
       const safePath = from.startsWith("/") && !from.startsWith("//") ? from : "/";
-      router.push(safePath);
+      window.location.href = safePath; // ← 풀 로드 → middleware 새로 실행 → 캐시 우회
     } catch {
       setErrorMessage("이메일 또는 비밀번호가 올바르지 않습니다.");
     } finally {
