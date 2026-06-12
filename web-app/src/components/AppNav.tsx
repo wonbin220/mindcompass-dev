@@ -10,14 +10,22 @@ import { LogOut } from "lucide-react";
 import { api } from "@/lib/api";
 
 
+// 데스크톱 사이드바: 전체 항목 노출
 const navItems = [
     { href: "/calendar", label: "캘린더", icon: "📅" },
     { href: "/diary/new", label: "기록", icon: "📝" },
     { href: "/chat", label: "대화", icon: "💬" },
+    { href: "/analysis", label: "분석", icon: "📈" },
     { href: "/report", label: "리포트", icon: "📊" },
+    { href: "/growth", label: "성장", icon: "🌱" },
     { href: "/settings", label: "설정", icon: "⚙️ " },
     { href: "/diary/search",  label: "검색",   icon: "🔍" },
 ];
+
+// 모바일 하단 탭바: 핵심 6개만(탭 폭 확보). 설정/검색은 사이드바에서만 접근.
+const mobileNavItems = navItems.filter(
+    (item) => item.href !== "/settings" && item.href !== "/diary/search"
+);
 
 export default function AppNav() {
     const pathname = usePathname();
@@ -69,15 +77,18 @@ export default function AppNav() {
                 </button>
             </aside>
 
-            {/* 하단 탭바 (모바일) */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex z-50">
-                {navItems.map((item) => {
+            {/* 하단 탭바 (모바일)
+                각 항목 min-w-[70px](6개=420px). 화면 폭 ≥420px면 flex-1로 균등 분배,
+                420px 미만이면 가로 스크롤(슬라이드)되어 라벨이 찌그러지지 않는다.
+                스크롤바는 숨긴다([scrollbar-width:none] / ::-webkit-scrollbar). */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex overflow-x-auto z-50 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {mobileNavItems.map((item) => {
                     const isActive = pathname.startsWith(item.href);
                     return (
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex-1 flex flex-col items-center justify-center py-3 text-xs font-medium transition-colors 
+                            className={`flex-1 min-w-[70px] flex flex-col items-center justify-center py-3 text-xs font-medium transition-colors
                             ${
                                 isActive ? "text-[#4A8EF0]" : "text-gray-400"
                             }`}>

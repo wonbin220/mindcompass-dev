@@ -367,21 +367,19 @@ export default function ReportPage() {
                             </Card>
                         );
                     })()}
-                    {/* AI 분석 */}
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <p className="text-sm font-medium text-gray-700">AI 분석</p>
-                        </CardHeader>
-                        <CardContent>
-                            {aiText ? (
-                                <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 leading-relaxed">
-                                    {aiText}
-                                </p>
-                            ) : (
-                                <p className="text-sm text-gray-400">분석 결과가 없습니다.</p>
-                            )}
-                        </CardContent>
-                    </Card>
+                    {/* AI 분석 — 요약이 있을 때만 표시 (없으면 섹션 숨김) */}
+                      {aiText && (
+                          <Card>
+                              <CardHeader className="pb-2">
+                                  <p className="text-sm font-medium text-gray-700">AI 분석</p>
+                              </CardHeader>
+                              <CardContent>
+                                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 leading-relaxed">
+                                      {aiText}
+                                  </p>
+                              </CardContent>
+                          </Card>
+                      )}
 
                 </div>
             )}

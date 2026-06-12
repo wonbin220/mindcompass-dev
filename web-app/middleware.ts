@@ -25,7 +25,9 @@ export const config = {
         "/calendar/:path*",
         "/diary/:path*",
         "/chat/:path*",
+        "/analysis/:path*",
         "/report/:path*",
+        "/growth/:path*",
         "/settings/:path*",
     ],
 };
