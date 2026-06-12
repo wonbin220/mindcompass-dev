@@ -1,0 +1,281 @@
+{
+  "info": {
+    "name": "Mind Compass - FastAPI Emotion Classifier",
+    "description": "ai-api-fastapi 감정분류 엔드포인트 테스트 컬렉션.\n\n사전 조건:\n- ai-api-fastapi 서버가 `http://localhost:8090`에서 실행 중이어야 한다.\n- 실행 방법:\n  cd ~/mindcompass-dev/ai-api-fastapi\n  .venv-app/bin/uvicorn app.main:app --port 8090 --reload\n\n테스트 순서:\n1. Health Check\n2. Runtime Info (현재 모델 상태)\n3. Emotion Classify - 감정별 텍스트 5종\n\n참고:\n- 현재 StubPredictor 동작 중 (v5 모델 학습 완료 후 실제 모델로 교체 예정)\n- stub 모드에서는 fallbackUsed=false이지만 결과가 키워드 기반이라 정확도 낮음\n- 실제 모델 연결 후에는 modelName이 KcELECTRA 계열로 바뀜",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8090",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health Check",
+      "item": [
+        {
+          "name": "1-1. 서버 상태 확인",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('status field exists', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('status');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Runtime Info",
+      "item": [
+        {
+          "name": "2-1. 현재 모델 런타임 정보 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('modelName exists', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('modelName');",
+                  "});",
+                  "pm.test('emotionLabels is array', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.emotionLabels).to.be.an('array');",
+                  "    pm.expect(json.emotionLabels.length).to.be.above(0);",
+                  "});",
+                  "pm.test('status is ready or loading', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(['ready', 'loading', 'error']).to.include(json.status);",
+                  "});",
+                  "console.log('Model:', pm.response.json().modelName, '| Version:', pm.response.json().modelVersion);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/internal/model/runtime-info"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Emotion Classify",
+      "description": "감정분류 추론 엔드포인트 테스트.\n\n요청 필드:\n- text (필수): 분류할 텍스트\n- returnTopK (선택, 기본 3): 상위 감정 개수\n- sessionId (선택): 추적용 세션 ID\n\n응답 확인 포인트:\n- primaryEmotion: 가장 높은 감정 레이블\n- confidence: 0~1 사이 확률\n- fallbackUsed: true면 모델 실패, stub 응답\n- modelName: 현재 stub이면 v5 미연결 상태",
+      "item": [
+        {
+          "name": "3-1. HAPPY - 기쁜 감정",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('primaryEmotion exists', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('primaryEmotion');",
+                  "});",
+                  "pm.test('confidence is 0~1', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.confidence).to.be.within(0, 1);",
+                  "});",
+                  "pm.test('scores array returned', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.scores).to.be.an('array');",
+                  "});",
+                  "console.log('Result:', pm.response.json().primaryEmotion, '(', pm.response.json().confidence, ')');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"오늘 프로젝트 발표가 잘 끝나서 너무 기쁘고 뿌듯해요! 팀원들도 칭찬해줬어요.\",\n  \"returnTopK\": 3,\n  \"sessionId\": \"test-happy-001\"\n}"
+            },
+            "url": "{{baseUrl}}/internal/model/emotion-classify"
+          }
+        },
+        {
+          "name": "3-2. ANXIOUS - 불안/걱정",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('primaryEmotion exists', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('primaryEmotion');",
+                  "});",
+                  "console.log('Result:', pm.response.json().primaryEmotion, '(', pm.response.json().confidence, ')');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"내일 면접이 너무 걱정돼요. 잘 할 수 있을지 모르겠고 자꾸 불안한 생각이 들어요.\",\n  \"returnTopK\": 3,\n  \"sessionId\": \"test-anxious-001\"\n}"
+            },
+            "url": "{{baseUrl}}/internal/model/emotion-classify"
+          }
+        },
+        {
+          "name": "3-3. SAD - 슬픔/상실감",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('primaryEmotion exists', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('primaryEmotion');",
+                  "});",
+                  "console.log('Result:', pm.response.json().primaryEmotion, '(', pm.response.json().confidence, ')');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"친한 친구가 멀리 이사 가버렸어요. 너무 허전하고 눈물이 나요.\",\n  \"returnTopK\": 3,\n  \"sessionId\": \"test-sad-001\"\n}"
+            },
+            "url": "{{baseUrl}}/internal/model/emotion-classify"
+          }
+        },
+        {
+          "name": "3-4. ANGRY - 분노",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('primaryEmotion exists', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('primaryEmotion');",
+                  "});",
+                  "console.log('Result:', pm.response.json().primaryEmotion, '(', pm.response.json().confidence, ')');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"회사에서 내 아이디어를 아무 말도 없이 다른 사람이 가져갔어요. 너무 화가 나고 억울해요.\",\n  \"returnTopK\": 3,\n  \"sessionId\": \"test-angry-001\"\n}"
+            },
+            "url": "{{baseUrl}}/internal/model/emotion-classify"
+          }
+        },
+        {
+          "name": "3-5. TIRED - 피곤/무기력 (v5 핵심 개선 대상)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('primaryEmotion exists', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('primaryEmotion');",
+                  "});",
+                  "pm.test('fallbackUsed field exists', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('fallbackUsed');",
+                  "});",
+                  "console.log('Result:', pm.response.json().primaryEmotion, '(', pm.response.json().confidence, ')', '| fallback:', pm.response.json().fallbackUsed);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"요즘 너무 지쳐있어요. 아무것도 하기 싫고 몸이 무거워서 침대에서 일어나기도 힘들어요.\",\n  \"returnTopK\": 3,\n  \"sessionId\": \"test-tired-001\"\n}"
+            },
+            "url": "{{baseUrl}}/internal/model/emotion-classify"
+          }
+        },
+        {
+          "name": "3-6. returnTopK=1 (primaryEmotion만)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('scores length <= 1', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.scores.length).to.be.at.most(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"오늘 하루가 조용하고 평온했어요.\",\n  \"returnTopK\": 1\n}"
+            },
+            "url": "{{baseUrl}}/internal/model/emotion-classify"
+          }
+        }
+      ]
+    }
+  ]
+}

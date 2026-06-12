@@ -1,0 +1,366 @@
+{
+  "info": {
+    "name": "Mind Compass - AI API",
+    "description": "ai-api 내부 엔드포인트 테스트 컬렉션.\n\n사전 조건:\n- ai-api 서버가 `http://localhost:8081`에서 실행 중이어야 한다.\n- 내부 API라서 accessToken은 필요하지 않다.\n\n테스트 순서:\n1. Analyze Diary - happy content\n2. Analyze Diary - neutral fallback\n3. Risk Score - high risk\n4. Risk Score - safe\n5. Generate Reply - normal\n6. Generate Reply - dangerous safety branch\n\n참고:\n- 로컬 dev 프로필에서는 OpenAI 없이 fallback 응답이 내려올 수 있다.\n- 그래서 일부 테스트는 AI 성공과 dev fallback 둘 다 허용하도록 작성했다.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Analyze Diary",
+      "description": "일기 감정 분석 내부 API 테스트",
+      "item": [
+        {
+          "name": "1-1. 일기 분석 성공 케이스 (happy content)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('primaryEmotion/emotionScore/summary 필드가 있다', function () {",
+                  "    pm.expect(jsonData.primaryEmotion).to.be.a('string').and.not.empty;",
+                  "    pm.expect(jsonData.emotionScore).to.be.a('number');",
+                  "    pm.expect(jsonData.summary).to.be.a('string').and.not.empty;",
+                  "    pm.expect(jsonData).to.have.property('analyzed');",
+                  "});",
+                  "",
+                  "pm.test('happy content는 기쁨 분류 또는 AI 성공 응답이다', function () {",
+                  "    if (jsonData.analyzed === false && jsonData.failureReason === 'DEV_PROFILE') {",
+                  "        pm.expect(jsonData.primaryEmotion).to.eql('기쁨');",
+                  "    } else {",
+                  "        pm.expect(jsonData.analyzed).to.eql(true);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diaryId\": 101,\n  \"title\": \"좋은 하루\",\n  \"content\": \"오늘 정말 행복하고 기쁜 하루였어요. 프로젝트를 잘 마무리해서 뿌듯했고 모든 게 좋게 느껴졌어요.\",\n  \"userId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/internal/ai/analyze-diary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "ai",
+                "analyze-diary"
+              ]
+            },
+            "description": "행복/기쁨 키워드가 포함된 일기 분석 요청.\n\n예상 응답:\n- AI 가능 시 analyzed=true\n- 로컬 dev fallback 시 primaryEmotion=기쁨, failureReason=DEV_PROFILE"
+          },
+          "response": []
+        },
+        {
+          "name": "1-2. 일기 분석 fallback 케이스 (neutral content)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('응답 필드가 있다', function () {",
+                  "    pm.expect(jsonData.primaryEmotion).to.be.a('string').and.not.empty;",
+                  "    pm.expect(jsonData.emotionScore).to.be.a('number');",
+                  "    pm.expect(jsonData.summary).to.be.a('string').and.not.empty;",
+                  "    pm.expect(jsonData).to.have.property('analyzed');",
+                  "});",
+                  "",
+                  "pm.test('neutral content는 로컬 fallback 또는 보수적 분석 결과다', function () {",
+                  "    if (jsonData.analyzed === false) {",
+                  "        pm.expect(['평온', '미분석']).to.include(jsonData.primaryEmotion);",
+                  "        pm.expect(jsonData.failureReason).to.be.a('string').and.not.empty;",
+                  "    } else {",
+                  "        pm.expect(jsonData.primaryEmotion).to.be.a('string').and.not.empty;",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diaryId\": 102,\n  \"title\": \"평범한 하루\",\n  \"content\": \"오늘은 평범하게 일하고 집에 와서 쉬었어요.\",\n  \"userId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/internal/ai/analyze-diary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "ai",
+                "analyze-diary"
+              ]
+            },
+            "description": "중립적인 일기 문장으로 fallback 또는 보수적 분석 응답을 확인한다.\n\n예상 응답:\n- 로컬 dev에서는 primaryEmotion=평온, analyzed=false 가능\n- AI 사용 환경에서는 일반 분석 성공 응답 가능"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Risk Score",
+      "description": "위험도 분석 내부 API 테스트",
+      "item": [
+        {
+          "name": "2-1. 고위험 문장 분석 (죽고 싶어요)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('고위험 응답 필드가 맞다', function () {",
+                  "    pm.expect(jsonData.isRisky).to.eql(true);",
+                  "    pm.expect(jsonData.riskScore).to.be.a('number').and.to.be.at.least(80);",
+                  "    pm.expect(jsonData.riskType).to.be.a('string').and.not.empty;",
+                  "    pm.expect(jsonData.detectedKeywords).to.be.an('array').that.is.not.empty;",
+                  "    pm.expect(jsonData.recommendedAction).to.eql('SHOW_SAFETY_MESSAGE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"정말 죽고 싶어요.\",\n  \"userId\": 1,\n  \"contextType\": \"CHAT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/internal/ai/risk-score",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "ai",
+                "risk-score"
+              ]
+            },
+            "description": "자살 위험 고위험 키워드가 포함된 문장.\n\n예상 응답:\n- isRisky=true\n- riskScore>=80\n- recommendedAction=SHOW_SAFETY_MESSAGE"
+          },
+          "response": []
+        },
+        {
+          "name": "2-2. 안전 문장 분석 (오늘 쉬고 싶어요)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('안전 응답 필드가 맞다', function () {",
+                  "    pm.expect(jsonData.isRisky).to.eql(false);",
+                  "    pm.expect(jsonData.riskScore).to.be.a('number');",
+                  "    pm.expect(jsonData.detectedKeywords).to.be.an('array');",
+                  "    pm.expect(jsonData.recommendedAction).to.be.oneOf(['NONE', 'MONITOR']);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"오늘 쉬고 싶어요.\",\n  \"userId\": 1,\n  \"contextType\": \"DIARY\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/internal/ai/risk-score",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "ai",
+                "risk-score"
+              ]
+            },
+            "description": "일반적인 휴식 표현 문장.\n\n예상 응답:\n- isRisky=false\n- recommendedAction=NONE (환경에 따라 MONITOR도 허용)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Generate Reply",
+      "description": "채팅 응답 생성 내부 API 테스트",
+      "item": [
+        {
+          "name": "3-1. 일반 메시지 응답 생성",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('reply/generated/responseType 필드가 있다', function () {",
+                  "    pm.expect(jsonData.reply).to.be.a('string').and.not.empty;",
+                  "    pm.expect(jsonData.generated).to.be.a('boolean');",
+                  "    pm.expect(jsonData.responseType).to.be.oneOf(['AI', 'FALLBACK']);",
+                  "});",
+                  "",
+                  "pm.test('일반 메시지는 AI 또는 fallback 응답을 반환한다', function () {",
+                  "    if (jsonData.responseType === 'FALLBACK') {",
+                  "        pm.expect(jsonData.failureReason).to.be.a('string').and.not.empty;",
+                  "    } else {",
+                  "        pm.expect(jsonData.generated).to.eql(true);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": 10,\n  \"userId\": 1,\n  \"userMessage\": \"오늘 하루가 너무 버거웠어요.\",\n  \"conversationHistory\": [\n    {\n      \"role\": \"USER\",\n      \"content\": \"어제도 비슷하게 힘들었어요.\"\n    },\n    {\n      \"role\": \"ASSISTANT\",\n      \"content\": \"특히 어떤 순간이 가장 힘들었나요?\"\n    }\n  ],\n  \"safetyMode\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/internal/ai/generate-reply",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "ai",
+                "generate-reply"
+              ]
+            },
+            "description": "일반 메시지에 대한 AI 또는 dev fallback 응답을 확인한다.\n\n예상 응답:\n- responseType=AI 또는 FALLBACK\n- reply 문자열 존재"
+          },
+          "response": []
+        },
+        {
+          "name": "3-2. 위험 메시지 응답 생성 (safety branch)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('safety branch 응답이 반환된다', function () {",
+                  "    pm.expect(jsonData.responseType).to.eql('SAFETY');",
+                  "    pm.expect(jsonData.generated).to.eql(true);",
+                  "    pm.expect(jsonData.detectedEmotion).to.eql('위기');",
+                  "    pm.expect(jsonData.reply).to.be.a('string').and.not.empty;",
+                  "    pm.expect(jsonData.reply).to.include('1393');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": 11,\n  \"userId\": 1,\n  \"userMessage\": \"이제 정말 죽고 싶어요.\",\n  \"conversationHistory\": [\n    {\n      \"role\": \"USER\",\n      \"content\": \"계속 버티기 힘들었어요.\"\n    },\n    {\n      \"role\": \"ASSISTANT\",\n      \"content\": \"지금 가장 위험하다고 느끼는 순간을 말해줄 수 있을까요?\"\n    }\n  ],\n  \"safetyMode\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/internal/ai/generate-reply",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "ai",
+                "generate-reply"
+              ]
+            },
+            "description": "위험 메시지에 대해 safety-first 분기가 동작하는지 확인한다.\n\n예상 응답:\n- responseType=SAFETY\n- reply에 1393 포함"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

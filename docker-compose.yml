@@ -1,0 +1,81 @@
+version: "2.4" 
+
+# 파일: docker-compose.yml
+# 역할: 로컬 통합 실행 (postgres + 4개 서비스)
+# 실행: docker compose up --build
+
+services:
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: mindcompass
+      POSTGRES_USER: mindcompass
+      POSTGRES_PASSWORD: mindcompass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mindcompass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ai-api-fastapi:
+    build: ./ai-api-fastapi
+    ports:
+      - "8090:8090"
+    environment:
+      MODEL_BUCKET: ${MODEL_BUCKET}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-ap-northeast-2}
+      TIRED_MODEL_PATH: /app/models/tired_v5 
+    volumes:
+      - model_cache:/app/models
+      - hf_cache:/app/.cache/huggingface
+
+  ai-api:
+    build: ./ai-api
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: manual
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      FASTAPI_BASE_URL: http://ai-api-fastapi:8090
+    depends_on:
+      - ai-api-fastapi
+
+  backend-api:
+    build: ./backend-api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:postgresql://postgres:5432/mindcompass
+      DATABASE_USERNAME: mindcompass
+      DATABASE_PASSWORD: mindcompass
+      JWT_SECRET: ${JWT_SECRET}
+      AI_API_ENABLED: "true"
+      AI_API_BASE_URL: http://ai-api:8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-api:
+        condition: service_started
+
+  web-app:
+    build:
+      context: ./web-app
+      args:
+        NEXT_PUBLIC_API_URL: http://backend-api:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend-api
+
+volumes:
+  postgres_data:
+  model_cache:
+  hf_cache:

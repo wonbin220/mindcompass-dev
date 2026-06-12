@@ -1,0 +1,220 @@
+{
+  "info": {
+    "name": "Mind Compass - Report API",
+    "description": "Report API 테스트 컬렉션.\n\n사전 조건:\n1. 로그인해서 accessToken을 받아야 한다\n2. 일기를 2~3개 이상 작성해야 리포트에 데이터가 나온다\n3. 채팅 세션도 있으면 totalChats에 반영된다\n\n테스트 순서:\n1. 로그인\n2. 주간 리포트 (이번 주 / 특정 주)\n3. 월간 리포트 (이번 달 / 특정 월)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. 사전준비",
+      "description": "로그인해서 토큰을 받는다.",
+      "item": [
+        {
+          "name": "0-1. 로그인 (토큰 발급)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "        console.log('accessToken 저장 완료');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@mindcompass.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "로그인 후 accessToken을 자동 저장한다."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1. 주간 리포트",
+      "description": "주간 감정 리포트 조회",
+      "item": [
+        {
+          "name": "1-1. 이번 주 리포트 (기본값)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/weekly",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "weekly"]
+            },
+            "description": "date 파라미터 없이 요청하면 이번 주 리포트를 반환한다.\n\n학습 포인트:\n- Controller에서 date == null이면 LocalDate.now() 사용\n- 월요일~일요일 기간으로 자동 계산\n\n응답 필드:\n- startDate/endDate: 주 시작~끝\n- totalDiaries: 해당 주 일기 수\n- totalChats: 해당 주 채팅 세션 수\n- emotionDistribution: 감정별 빈도\n- dominantEmotion: 가장 많은 감정\n- dailyTrends: 7일간 일별 감정 추이\n- aiSummary: null (AI 미연동)\n\n일기가 없으면 totalDiaries=0, 빈 분포 — 정상 동작이다."
+          },
+          "response": []
+        },
+        {
+          "name": "1-2. 특정 주 리포트 (날짜 지정)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/weekly?date=2026-04-08",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "weekly"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2026-04-08"
+                }
+              ]
+            },
+            "description": "특정 날짜가 속한 주의 리포트를 조회한다.\n\n2026-04-08(수) → 2026-04-06(월)~2026-04-12(일) 기간\n\n학습 포인트:\n- TemporalAdjusters.previousOrSame(MONDAY)로 주 시작일 계산\n- 일기를 작성한 날짜 범위에 맞춰서 date를 바꿔보세요"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. 월간 리포트",
+      "description": "월간 감정 리포트 조회",
+      "item": [
+        {
+          "name": "2-1. 이번 달 리포트 (기본값)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/monthly",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "monthly"]
+            },
+            "description": "year/month 파라미터 없이 요청하면 이번 달 리포트를 반환한다.\n\n응답 필드:\n- year/month: 대상 연/월\n- totalDiaries/totalChats: 기본 통계\n- emotionDistribution/dominantEmotion: 감정 분포\n- weeklySummaries: 주차별 요약 (1~7일=1주차, 8~14일=2주차, ...)\n- comparisonWithLastMonth: 전월 비교\n  - scoreDiff: 감정 점수 차이\n  - diaryCountDiff: 일기 수 차이\n  - trend: improving / stable / declining\n- aiInsight: null (AI 미연동)"
+          },
+          "response": []
+        },
+        {
+          "name": "2-2. 특정 월 리포트 (연/월 지정)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/monthly?year=2026&month=4",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "monthly"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2026"
+                },
+                {
+                  "key": "month",
+                  "value": "4"
+                }
+              ]
+            },
+            "description": "특정 연/월의 리포트를 조회한다.\n\n학습 포인트:\n- 전월 비교: 2026년 4월 vs 2026년 3월 데이터를 비교\n- 전월 데이터가 없으면 lastAvgScore=0.0 → scoreDiff가 크게 나올 수 있다\n- trend 판정 기준: scoreDiff > 0.1 → improving, < -0.1 → declining"
+          },
+          "response": []
+        },
+        {
+          "name": "2-3. 데이터 없는 월 조회",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/monthly?year=2025&month=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "monthly"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025"
+                },
+                {
+                  "key": "month",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "일기가 없는 과거 월을 조회한다.\n\n학습 포인트:\n- 에러가 나지 않고 빈 데이터로 정상 응답해야 한다\n- totalDiaries=0, emotionDistribution={}, weeklySummaries는 주차별 diaryCount=0\n\n예상 응답: 200 OK + 빈 통계 데이터"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. 에러 케이스",
+      "description": "예외 상황 테스트",
+      "item": [
+        {
+          "name": "3-1. 토큰 없이 주간 리포트 조회",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/weekly",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "weekly"]
+            },
+            "description": "Authorization 헤더 없이 요청.\n\n예상 응답: 401 Unauthorized"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

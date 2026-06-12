@@ -81,3 +81,19 @@ ai-api-fastapi/training/emotion_classifier/processed/
 .venv-app/
 ai-api-fastapi/.venv-app/
 .codex
+
+# ===== 데모 준비 문서 (로컬 전용 — 데모 계정/URL/인프라 상세 포함, GitHub 금지) =====
+docs/DEMO_RECORDING_GUIDE.md
+docs/PRE_DEMO_REVIEW.md
+docs/TEARDOWN_RUNBOOK.md
+
+# ===== 로컬 전용 데이터/도구/잔재 (GitHub 금지) =====
+csv파일들/
+초안들/
+im-not-ai/
+web-app/design-ref/
+/package-lock.json
+ai-api-fastapi/=1.1.0
+analyze_keywords.py
+extract_tired_data.py
+find_tired_code.py
