@@ -113,8 +113,9 @@ public class ChatService {
         // 2. Safety 확인 (AI 실패해도 키워드 기반 fallback)
         SafetyCheckResponse safetyResult = checkSafety(userId, request.getContent());
 
-        // 3. AI 응답 생성 또는 안전 메시지
+        // 3. AI 응답 생성 또는 안전 메시지 + 응답 유형(말풍선 색 구분용) 결정
         ChatMessage assistantMessage;
+        String responseType;
         if (safetyResult.getIsRisky() != null && safetyResult.getIsRisky()) {
             // 위기 상황: 고정 안전 메시지 반환
             String safetyMessage = safetyResult.getSafetyMessage() != null
@@ -125,19 +126,28 @@ public class ChatService {
                     session,
                     safetyMessage
             );
+            responseType = "SAFETY";
             log.warn("위기 상황 감지: sessionId={}, riskLevel={}",
                     sessionId, safetyResult.getRiskLevel());
         } else {
             // 일반 상황: AI 응답 생성
             assistantMessage = generateAiResponse(session, request.getContent());
+            // AI 실패 fallback이면 FALLBACK, 중위험이면 SUPPORTIVE, 그 외 NORMAL
+            if (DEFAULT_FALLBACK_MESSAGE.equals(assistantMessage.getContent())) {
+                responseType = "FALLBACK";
+            } else if ("MEDIUM".equalsIgnoreCase(safetyResult.getRiskLevel())) {
+                responseType = "SUPPORTIVE";
+            } else {
+                responseType = "NORMAL";
+            }
         }
 
         // 4. AI 응답 저장
         messageRepository.save(assistantMessage);
-        log.info("AI 응답 저장: sessionId={}, isSafety={}",
-                sessionId, safetyResult.getIsRisky());
+        log.info("AI 응답 저장: sessionId={}, responseType={}",
+                sessionId, responseType);
 
-        return ChatMessageResponse.from(assistantMessage);
+        return ChatMessageResponse.of(assistantMessage, responseType);
     }
 
     /**
