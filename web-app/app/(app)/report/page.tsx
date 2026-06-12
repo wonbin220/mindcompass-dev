@@ -1,11 +1,13 @@
 "use client";
 // 파일: app/(app)/report/page.tsx
 // 역할: 감정 리포트 페이지 - 주간/월간 감정 통계 (protected)
-// 호출: GET /reports/monthly-summary, GET /reports/emotions/weekly → backend-api
+// 호출: GET /reports/weekly, GET /reports/monthly → backend-api
+// 비고: 디자인 Figma 기준 폴리시. fetch/기간 토글/차트 로직은 보존.
+//       Figma의 '위험도 흐름' 카드는 백엔드 위험도 집계 API가 없어 미구현(데이터 없음).
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import { api } from "@/lib/api";
 
 type Period = "weekly" | "monthly";
@@ -65,11 +67,6 @@ const EMOTION_COLOR: Record<string, string> = {
     sad: "#60A5FA", angry: "#F87171", tired: "#9CA3AF",
 };
 
-const EMOTION_EMOJI: Record<string, string> = {
-    happy: "😊", calm: "😌", anxious: "😰",
-    sad: "😢", angry: "😠", tired: "😴",
-};
-
 interface ChartPoint {
     value: number | null;
     label: string;
@@ -78,11 +75,11 @@ interface ChartPoint {
 
 function SparklineChart({ data }: { data: ChartPoint[] }) {
     const W = 280;
-    const H = 110;
+    const H = 120;
     const padL = 24;
     const padR = 8;
-    const padT = 12;
-    const padB = 22;
+    const padT = 14;
+    const padB = 24;
     const innerW = W - padL - padR;
     const innerH = H - padT - padB;
 
@@ -102,92 +99,58 @@ function SparklineChart({ data }: { data: ChartPoint[] }) {
 
     return (
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
-            {/* 그리드 라인 + Y 레이블 */}
             {[1, 3, 5].map(v => (
                 <g key={v}>
-                    <line
-                        x1={padL} y1={yOf(v)} x2={W - padR} y2={yOf(v)}
-                        stroke="#F3F4F6" strokeWidth="1"
-                    />
-                    <text x={padL - 4} y={yOf(v) + 3.5} textAnchor="end" fontSize="9" fill="#D1D5DB">
-                        {v}
-                    </text>
+                    <line x1={padL} y1={yOf(v)} x2={W - padR} y2={yOf(v)} stroke="#F3F4F6" strokeWidth="1" />
+                    <text x={padL - 4} y={yOf(v) + 3.5} textAnchor="end" fontSize="9" fill="#D1D5DB">{v}</text>
                 </g>
             ))}
-
-            {/* 연결선 */}
             {validPts.length > 1 && (
                 <polyline
                     points={linePoints}
                     fill="none"
                     stroke="#4A8EF0"
-                    strokeWidth="2"
+                    strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    opacity="0.7"
                 />
             )}
-
-            {/* 도트 */}
             {validPts.map((d, i) => (
-                <circle
-                    key={i}
-                    cx={d.x} cy={d.y}
-                    r={4}
-                    fill={EMOTION_COLOR[d.emotion ?? ""] ?? "#4A8EF0"}
-                    stroke="white"
-                    strokeWidth="1.5"
-                />
+                <circle key={i} cx={d.x} cy={d.y} r={4.5} fill="#4A8EF0" stroke="white" strokeWidth="2" />
             ))}
-
-            {/* X 레이블 */}
             {data.map((d, i) => (
-                <text
-                    key={i}
-                    x={xOf(i)} y={H - 4}
-                    textAnchor="middle"
-                    fontSize="9"
-                    fill="#9CA3AF"
-                >
-                    {d.label}
-                </text>
+                <text key={i} x={xOf(i)} y={H - 5} textAnchor="middle" fontSize="9" fill="#9CA3AF">{d.label}</text>
             ))}
         </svg>
     );
 }
 
-function EmotionBars({ distribution }: { distribution: Record<string, number> }) {
-    const total = Object.values(distribution).reduce((a, b) => a + b, 0);
-    if (total === 0) {
+// 가장 많이 느낀 감정 — 카운트 알약
+function EmotionCountPills({ distribution }: { distribution: Record<string, number> }) {
+    const entries = Object.entries(distribution).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1]);
+    if (entries.length === 0) {
         return <p className="text-sm text-gray-400">기록된 감정이 없습니다.</p>;
     }
-
     return (
-        <div className="flex flex-col gap-3">
-            {Object.entries(distribution).map(([emotion, count]) => {
-                const percent = Math.round((count / total) * 100);
+        <div className="flex flex-wrap gap-2">
+            {entries.map(([emotion, count]) => {
+                const color = EMOTION_COLOR[emotion] ?? "#9CA3AF";
                 return (
-                    <div key={emotion} className="flex items-center gap-3">
-                          <span className="text-sm text-gray-600 w-16">
-                              {EMOTION_EMOJI[emotion] ?? "📔"} {EMOTION_LABEL[emotion] ?? emotion}
-                          </span>
-                        <div className="flex-1 bg-gray-100 rounded-full h-2.5 overflow-hidden">
-                            <div
-                                className="h-full rounded-full transition-all duration-500"
-                                style={{
-                                    width: `${percent}%`,
-                                    backgroundColor: EMOTION_COLOR[emotion] ?? "#9CA3AF",
-                                }}
-                            />
-                        </div>
-                        <span className="text-sm text-gray-400 w-10 text-right">{percent}%</span>
-                    </div>
+                    <span
+                        key={emotion}
+                        className="text-sm font-semibold rounded-full px-3.5 py-1.5"
+                        style={{ backgroundColor: `${color}22`, color }}
+                    >
+                        {EMOTION_LABEL[emotion] ?? emotion} {count}회
+                    </span>
                 );
             })}
         </div>
     );
 }
+
 export default function ReportPage() {
+    const router = useRouter();
     const [period, setPeriod] = useState<Period>("weekly");
     const [weekly, setWeekly] = useState<WeeklyReport | null>(null);
     const [monthly, setMonthly] = useState<MonthlyReport | null>(null);
@@ -215,171 +178,145 @@ export default function ReportPage() {
         }
         fetchReport();
     }, [period]);
+
     const data = period === "weekly" ? weekly : monthly;
     const aiText = period === "weekly" ? weekly?.aiSummary : monthly?.aiInsight;
-    const periodLabel = period === "weekly"
-        ? (weekly ? `${weekly.startDate} ~ ${weekly.endDate}` : "이번 주")
-        : (monthly ? `${monthly.year}년 ${monthly.month}월` : "이번 달");
+    const reportTitle = period === "weekly"
+        ? "이번 주 감정 리포트"
+        : (monthly ? `${monthly.month}월 감정 리포트` : "이번 달 감정 리포트");
+    const reportSubtitle = period === "weekly" ? "이번 주의 감정 흐름과 기록 요약" : "이번 달의 감정 흐름과 기록 요약";
 
     return (
-        <div className="p-4 md:p-8 max-w-2xl mx-auto w-full">
-            <h2 className="text-lg font-semibold text-gray-800 mb-6">감정 리포트</h2>
+        <div className="p-4 md:p-8 max-w-2xl mx-auto w-full pb-24">
 
-            {/* 탭 */}
-            <div className="flex gap-2 mb-6">
-                {(["weekly", "monthly"] as Period[]).map((p) => (
-                    <Button
-                        key={p}
-                        variant={period === p ? "default" : "outline"}
-                        className={period === p ? "bg-[#4A8EF0] hover:bg-[#3a7ee0]" : ""}
-                        onClick={() => setPeriod(p)}
-                    >
-                        {p === "weekly" ? "주간" : "월간"}
-                    </Button>
-                ))}
+            {/* 헤더 */}
+            <div className="relative flex items-center justify-center mb-5 h-8">
+                <button onClick={() => router.back()} className="absolute left-0 text-gray-700 hover:text-gray-900" aria-label="뒤로">
+                    <ChevronLeft className="w-6 h-6" />
+                </button>
+                <h1 className="text-lg font-bold text-gray-800">감정 리포트</h1>
+                {/* 기간 토글 */}
+                <div className="absolute right-0 flex bg-gray-100 rounded-full p-0.5 text-xs font-semibold">
+                    {(["weekly", "monthly"] as Period[]).map((p) => (
+                        <button
+                            key={p}
+                            onClick={() => setPeriod(p)}
+                            className={`px-3 py-1 rounded-full transition-colors ${
+                                period === p ? "bg-[#4A8EF0] text-white" : "text-gray-500"
+                            }`}
+                        >
+                            {p === "weekly" ? "주간" : "월간"}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {isLoading ? (
-                <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
-                    불러오는 중...
-                </div>
+                <div className="flex items-center justify-center h-48 text-gray-400 text-sm">불러오는 중...</div>
             ) : !data ? (
-                <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
-                    데이터가 없습니다.
-                </div>
+                <div className="flex items-center justify-center h-48 text-gray-400 text-sm">데이터가 없습니다.</div>
             ) : (
                 <div className="flex flex-col gap-4">
 
-                    {/* 기간 + 요약 통계 */}
-                    <Card>
-                        <CardContent className="pt-6">
-                            <p className="text-sm text-gray-500 mb-3">{periodLabel}</p>
-                            <div className="flex gap-6">
-                                {data.totalChats > 0 && (
-                                    <div>
-                                        <p className="text-xs text-gray-400">채팅</p>
-                                        <p className="text-xl font-bold text-[#4A8EF0]">{data.totalChats}회</p>
-                                    </div>
-                                )}
-                                <div>
-                                    <p className="text-xs text-gray-400">일기</p>
-                                    <p className="text-xl font-bold text-[#4A8EF0]">{data.totalDiaries}개</p>
-                                </div>
-                                {data.averageEmotionScore != null && (
-                                    <div>
-                                        <p className="text-xs text-gray-400">평균 강도</p>
-                                        <p className="text-xl font-bold text-gray-700">
-                                            {data.averageEmotionScore.toFixed(1)} / 5
-                                        </p>
-                                    </div>
-                                )}
-                                {data.dominantEmotion && (
-                                    <div>
-                                        <p className="text-xs text-gray-400">주요 감정</p>
-                                        <p className="text-xl font-bold text-gray-700">
-                                            {EMOTION_EMOJI[data.dominantEmotion] ?? "📔"}{" "}
-                                            {EMOTION_LABEL[data.dominantEmotion] ?? data.dominantEmotion}
-                                        </p>
-                                    </div>
-                                )}
+                    {/* 요약 카드 */}
+                    <div className="rounded-2xl bg-[#EEF3FE] p-5">
+                        <h2 className="text-xl font-bold text-gray-800">{reportTitle}</h2>
+                        <p className="text-sm text-gray-500 mt-1">{reportSubtitle}</p>
+                        <div className="grid grid-cols-3 gap-2 mt-4">
+                            <div className="bg-white rounded-xl px-3 py-3 text-center">
+                                <p className="text-xs text-gray-400">기록 수</p>
+                                <p className="text-xl font-bold text-gray-800 mt-0.5">{data.totalDiaries}</p>
                             </div>
-                        </CardContent>
-                    </Card>
+                            <div className="bg-white rounded-xl px-3 py-3 text-center">
+                                <p className="text-xs text-gray-400">평균 강도</p>
+                                <p className="text-xl font-bold text-gray-800 mt-0.5">
+                                    {data.averageEmotionScore != null ? data.averageEmotionScore.toFixed(1) : "-"}
+                                </p>
+                            </div>
+                            <div className="bg-white rounded-xl px-3 py-3 text-center">
+                                <p className="text-xs text-gray-400">대표 감정</p>
+                                <p className="text-xl font-bold text-gray-800 mt-0.5">
+                                    {data.dominantEmotion ? (EMOTION_LABEL[data.dominantEmotion] ?? data.dominantEmotion) : "-"}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-                    {/* 감정 분포 바 */}
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <p className="text-sm font-medium text-gray-700">감정 분포</p>
-                        </CardHeader>
-                        <CardContent>
-                            <EmotionBars distribution={data.emotionDistribution ?? {}} />
-                        </CardContent>
-                    </Card>
-                    {/* 감정 강도 추이 차트 */}
+                    {/* 감정 변화 추이 */}
                     {period === "weekly" && weekly && (weekly.dailyTrends?.length ?? 0) > 0 && (
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <p className="text-sm font-medium text-gray-700">감정 강도 추이</p>
-                            </CardHeader>
-                            <CardContent>
-                                <SparklineChart
-                                    data={weekly.dailyTrends.map(d => ({
-                                        value: d.hasDiary && d.score != null ? d.score : null,
-                                        label: new Date(d.date + "T00:00:00").toLocaleDateString("ko-KR", { weekday: "short" }),
-                                        emotion: d.emotion,
-                                    }))}
-                                />
-                            </CardContent>
-                        </Card>
+                        <div className="rounded-2xl bg-white ring-1 ring-gray-100 shadow-sm p-5">
+                            <h3 className="text-base font-bold text-gray-800">감정 변화 추이</h3>
+                            <p className="text-xs font-medium text-gray-400 mt-0.5 mb-2">최근 7일 감정 강도 변화</p>
+                            <SparklineChart
+                                data={weekly.dailyTrends.map(d => ({
+                                    value: d.hasDiary && d.score != null ? d.score : null,
+                                    label: new Date(d.date + "T00:00:00").toLocaleDateString("ko-KR", { weekday: "short" }),
+                                    emotion: d.emotion,
+                                }))}
+                            />
+                        </div>
                     )}
                     {period === "monthly" && monthly && (monthly.weeklySummaries?.length ?? 0) > 0 && (
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <p className="text-sm font-medium text-gray-700">주별 감정 강도 추이</p>
-                            </CardHeader>
-                            <CardContent>
-                                <SparklineChart
-                                    data={monthly.weeklySummaries.map(d => ({
-                                        value: d.averageScore,
-                                        label: `${d.weekNumber}주`,
-                                        emotion: d.dominantEmotion,
-                                    }))}
-                                />
-                            </CardContent>
-                        </Card>
+                        <div className="rounded-2xl bg-white ring-1 ring-gray-100 shadow-sm p-5">
+                            <h3 className="text-base font-bold text-gray-800">감정 변화 추이</h3>
+                            <p className="text-xs font-medium text-gray-400 mt-0.5 mb-2">주별 감정 강도 변화</p>
+                            <SparklineChart
+                                data={monthly.weeklySummaries.map(d => ({
+                                    value: d.averageScore,
+                                    label: `${d.weekNumber}주`,
+                                    emotion: d.dominantEmotion,
+                                }))}
+                            />
+                        </div>
                     )}
+
+                    {/* 가장 많이 느낀 감정 */}
+                    <div className="rounded-2xl bg-white ring-1 ring-gray-100 shadow-sm p-5">
+                        <h3 className="text-base font-bold text-gray-800 mb-3">가장 많이 느낀 감정</h3>
+                        <EmotionCountPills distribution={data.emotionDistribution ?? {}} />
+                    </div>
+
+                    {/* 전월 대비 (월간) */}
                     {period === "monthly" && monthly?.comparisonWithLastMonth && (() => {
                         const c = monthly.comparisonWithLastMonth!;
                         const trendConfig = {
-                            improving: { label: "상승 ↑", color: "text-green-600 bg-green-50" },
-                            declining: { label: "하락 ↓", color: "text-red-600 bg-red-50" },
+                            improving: { label: "상승 ↑", color: "text-[#2F855A] bg-[#34D399]/15" },
+                            declining: { label: "하락 ↓", color: "text-[#C53030] bg-[#F87171]/15" },
                             stable:    { label: "유지 →", color: "text-gray-600 bg-gray-100" },
                         };
                         const t = trendConfig[c.trend];
                         return (
-                            <Card>
-                                <CardHeader className="pb-2">
-                                    <p className="text-sm font-medium text-gray-700">전월 대비</p>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex gap-6 items-center">
-                                        <div>
-                                            <p className="text-xs text-gray-400">일기 수</p>
-                                            <p className={`text-lg font-bold ${c.diaryCountDiff >= 0 ? "text-green-600" :
-                                                "text-red-500"}`}>
-                                                {c.diaryCountDiff >= 0 ? "+" : ""}{c.diaryCountDiff}개
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-400">감정 강도</p>
-                                            <p className={`text-lg font-bold ${c.scoreDiff >= 0 ? "text-green-600" : "text-red-500"}`}>
-                                                {c.scoreDiff >= 0 ? "+" : ""}{c.scoreDiff.toFixed(1)}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-400">추세</p>
-                                            <span className={`text-sm font-medium px-2 py-0.5 rounded-full ${t.color}`}>
-                              {t.label}
-                          </span>
-                                        </div>
+                            <div className="rounded-2xl bg-white ring-1 ring-gray-100 shadow-sm p-5">
+                                <h3 className="text-base font-bold text-gray-800 mb-3">전월 대비</h3>
+                                <div className="flex gap-6 items-center">
+                                    <div>
+                                        <p className="text-xs text-gray-400">일기 수</p>
+                                        <p className={`text-lg font-bold ${c.diaryCountDiff >= 0 ? "text-[#2F855A]" : "text-[#C53030]"}`}>
+                                            {c.diaryCountDiff >= 0 ? "+" : ""}{c.diaryCountDiff}개
+                                        </p>
                                     </div>
-                                </CardContent>
-                            </Card>
+                                    <div>
+                                        <p className="text-xs text-gray-400">감정 강도</p>
+                                        <p className={`text-lg font-bold ${c.scoreDiff >= 0 ? "text-[#2F855A]" : "text-[#C53030]"}`}>
+                                            {c.scoreDiff >= 0 ? "+" : ""}{c.scoreDiff.toFixed(1)}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400">추세</p>
+                                        <span className={`text-sm font-semibold px-2.5 py-0.5 rounded-full ${t.color}`}>{t.label}</span>
+                                    </div>
+                                </div>
+                            </div>
                         );
                     })()}
-                    {/* AI 분석 — 요약이 있을 때만 표시 (없으면 섹션 숨김) */}
-                      {aiText && (
-                          <Card>
-                              <CardHeader className="pb-2">
-                                  <p className="text-sm font-medium text-gray-700">AI 분석</p>
-                              </CardHeader>
-                              <CardContent>
-                                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 leading-relaxed">
-                                      {aiText}
-                                  </p>
-                              </CardContent>
-                          </Card>
-                      )}
+
+                    {/* AI 분석 — 요약이 있을 때만 표시 */}
+                    {aiText && (
+                        <div className="rounded-2xl bg-white ring-1 ring-gray-100 shadow-sm p-5">
+                            <h3 className="text-base font-bold text-gray-800 mb-2">AI 분석</h3>
+                            <p className="text-sm text-gray-600 bg-gray-50 rounded-xl p-4 leading-relaxed">{aiText}</p>
+                        </div>
+                    )}
 
                 </div>
             )}
