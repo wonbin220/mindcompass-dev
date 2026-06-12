@@ -86,7 +86,7 @@ export default function SettingsPage() {
         <div className="max-w-md mx-auto px-4 py-8">
             <h1 className="text-xl font-bold text-gray-800 mb-6">내 정보</h1>
 
-            <div className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50">
+            <div className="bg-white rounded-2xl ring-1 ring-gray-100 shadow-sm divide-y divide-gray-50">
 
                 {/* 닉네임 */}
                 <div className="px-4 py-4">
@@ -108,18 +108,18 @@ export default function SettingsPage() {
                                 value={nicknameInput}
                                 onChange={(e) => setNicknameInput(e.target.value)}
                                 maxLength={50}
-                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#4A8EF0]"/>
+                                className="w-full h-12 px-4 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A8EF0]/40"/>
                             {saveError && <p className="text-xs text-red-400">{saveError}</p>}
                             <div className="flex gap-2">
                                 <button
                                     onClick={handleSave}
                                     disabled={isSaving}
-                                    className="flex-1 py-2 bg-[#4A8EF0] text-white text-sm font-medium rounded-lg hover:bg-[#3a7ee0] disabled:opacity-50">
+                                    className="flex-1 py-2.5 bg-[#4A8EF0] text-white text-sm font-semibold rounded-full hover:bg-[#3a7ee0] disabled:opacity-50">
                                     {isSaving ? "저장 중..." : "저장"}
                                 </button>
                                 <button
                                     onClick={() => setIsEditing(false)}
-                                    className="flex-1 py-2 border border-gray-200 text-sm text-gray-500 rounded-lg hover:bg-gray-50">
+                                    className="flex-1 py-2.5 border border-gray-200 text-sm text-gray-500 rounded-full hover:bg-gray-50">
                                 취소
                             </button>
                             </div>
@@ -160,12 +160,12 @@ export default function SettingsPage() {
                                 <button
                                     onClick={handleDeleteAccount}
                                     disabled={isDeleting}
-                                    className="flex-1 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 disabled:opacity-50">
+                                    className="flex-1 py-2.5 bg-red-500 text-white text-sm font-semibold rounded-full hover:bg-red-600 disabled:opacity-50">
                                     {isDeleting ? "처리 중..." : "탈퇴하기"}
                                 </button>
                                 <button
                                     onClick={() => { setShowDeleteConfirm(false); setDeleteError(""); }}
-                                    className="flex-1 py-2 border border-gray-200 text-sm text-gray-500 rounded-lg hover:bg-gray-50">
+                                    className="flex-1 py-2.5 border border-gray-200 text-sm text-gray-500 rounded-full hover:bg-gray-50">
                                     취소
                                 </button>
                             </div>
